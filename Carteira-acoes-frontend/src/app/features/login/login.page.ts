@@ -75,9 +75,36 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
     .password-control { position: relative; }
     .password-control input { padding-right: 3rem; }
     .password-toggle { align-items: center; background: transparent; border: 0; color: var(--color-muted); cursor: pointer; display: inline-flex; height: 2.75rem; justify-content: center; padding: 0; position: absolute; right: .2rem; top: .1rem; width: 2.75rem; }
-    .field-error, .login-error { color: #a40020; font-size: .8rem; margin: 0; }
+    .field-error, .login-error { color: var(--color-danger); font-size: .8rem; margin: 0; }
     .login-error { border-left: 3px solid var(--color-red, #e4002b); padding: .7rem .8rem; }
-    .login-submit { --mdc-filled-button-label-text-color: #fff; background: var(--color-blue); border-radius: 0; color: #fff; min-height: 3rem; width: 100%; }
+    .login-submit {
+      --login-submit-background: var(--color-blue);
+      --login-submit-foreground: #fff;
+      --login-submit-hover-background: var(--color-blue-hover);
+      --login-submit-active-background: #001b68;
+      --login-submit-disabled-background: #53616b;
+      --login-submit-disabled-foreground: #fff;
+      --mat-button-filled-container-color: var(--login-submit-background);
+      --mat-button-filled-label-text-color: var(--login-submit-foreground);
+      --mat-button-filled-disabled-container-color: var(--login-submit-disabled-background);
+      --mat-button-filled-disabled-label-text-color: var(--login-submit-disabled-foreground);
+      background: var(--login-submit-background);
+      border: 1px solid var(--login-submit-background);
+      border-radius: 0;
+      color: var(--login-submit-foreground);
+      min-height: 3rem;
+      width: 100%;
+    }
+    .login-submit:not(:disabled):hover { background: var(--login-submit-hover-background); border-color: var(--login-submit-hover-background); }
+    .login-submit:not(:disabled):active { background: var(--login-submit-active-background); border-color: var(--login-submit-active-background); transform: translateY(1px); }
+    .login-submit:focus-visible { outline-color: var(--focus-ring); }
+    .login-submit:disabled { background: var(--login-submit-disabled-background); border-color: var(--login-submit-disabled-background); color: var(--login-submit-disabled-foreground); opacity: 1; }
+    :host-context([data-theme='dark']) .login-submit {
+      --login-submit-foreground: #10161d;
+      --login-submit-hover-background: var(--color-blue-hover);
+      --login-submit-active-background: #7899e5;
+      --login-submit-disabled-foreground: #fff;
+    }
     .login-note { border-top: 1px solid var(--color-rule); padding-top: 1rem; }.login-register { color: var(--color-muted); font-size: .85rem; margin: 0; }.login-register a { color: var(--color-blue); font-weight: 750; }
     @media (max-width: 640px) { .login-page { padding: 1rem; }.login-shell { display: block; }.login-identity { border-bottom: 1px solid var(--color-rule); border-right: 0; padding: 1.5rem; }.login-rule { height: 2rem; margin-bottom: 1rem; }.login-panel { box-sizing: border-box; max-width: none; padding: 1.5rem; } }
   `
