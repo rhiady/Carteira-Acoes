@@ -1,0 +1,7 @@
+.git
+.gitignore
+.env
+target
+logs
+*.log
+openspec/changes

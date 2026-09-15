@@ -1,0 +1,8 @@
+import { Component, inject, signal } from '@angular/core';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
+import { Corretora } from '../../core/models/domain.models';
+import { CorretoraService } from '../../core/services/corretora.service';
+@Component({selector:'app-corretora-lookup-page',imports:[ReactiveFormsModule,MatButtonModule,RouterLink],template:`<section><h1>Consultar corretora por CNPJ</h1><form (ngSubmit)="search()"><label for="cnpj-search">CNPJ</label><input id="cnpj-search" [formControl]="cnpj"><button mat-flat-button type="submit" [disabled]="cnpj.invalid||loading()">{{loading()?'Consultando…':'Consultar'}}</button></form>@if(error()){<p class="error" role="alert">{{error()}}</p>}@if(item()){<dl><dt>Nome</dt><dd>{{item()!.nomeFantasia||item()!.razaoSocial||item()!.cnpj}}</dd><dt>CNPJ</dt><dd>{{item()!.cnpj}}</dd><dt>CVM</dt><dd>{{item()!.registroCvm||'—'}}</dd></dl>}<a routerLink="/corretoras">Voltar</a></section>`})
+export class CorretoraLookupPage{private readonly service=inject(CorretoraService);protected readonly cnpj=new FormControl('',{nonNullable:true,validators:Validators.required});protected readonly item=signal<Corretora|null>(null);protected readonly loading=signal(false);protected readonly error=signal('');protected search(){if(this.cnpj.invalid)return;this.loading.set(true);this.error.set('');this.service.getByCnpj(this.cnpj.value.trim()).subscribe({next:item=>{this.item.set(item);this.loading.set(false)},error:(e:{message?:string})=>{this.error.set(e.message??'Corretora não encontrada.');this.loading.set(false)}})}}

@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: carteira-acoes-db-deploy
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      - carteira-acoes-deploy-data:/var/lib/postgresql/data
+
+    ports:
+      - "5433:5432"
+
+    networks:
+      - carteira-acoes-network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../Carteira-acoes-backend
+      dockerfile: Dockerfile
+
+    container_name: carteira-acoes-backend-deploy
+
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      CORS_ALLOWED_ORIGINS: http://localhost
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - carteira-acoes-network
+
+  frontend:
+    build:
+      context: ../Carteira-acoes-frontend
+      dockerfile: Dockerfile
+
+    container_name: carteira-acoes-frontend-deploy
+
+    ports:
+      - "80:80"
+
+    depends_on:
+      - backend
+
+    networks:
+      - carteira-acoes-network
+
+networks:
+  carteira-acoes-network:
+    name: carteira-acoes-network
+    driver: bridge
+
+volumes:
+  carteira-acoes-deploy-data:
+    name: carteira-acoes-deploy-data
