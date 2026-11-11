@@ -14,6 +14,7 @@ import com.carteiraacoesbackend.domains.Corretora;
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Mercado;
 import com.carteiraacoesbackend.domains.enums.Moeda;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.dto.CompraRequest;
 import com.carteiraacoesbackend.dto.VendaRequest;
 import com.carteiraacoesbackend.exceptions.ApiException;
@@ -71,6 +72,7 @@ class OperacaoServiceIntegrationTest {
     usuario.setNome("Ana");
     usuario.setEmail("ana" + System.nanoTime() + "@test.com");
     usuario.setSenha("senha");
+    usuario.setPapel(Papel.USER);
     usuarios.save(usuario);
     Corretora corretora = criarCorretora();
     carteira = new Carteira();

@@ -17,8 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +41,14 @@ public class CorretoraResource {
   @Operation(summary = "Cadastra uma corretora validada por CNPJ e registro CVM")
   @ApiResponses({
     @ApiResponse(responseCode = "201", description = "Corretora criada"),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Usuário não autenticado",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Apenas administradores podem criar corretoras",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
     @ApiResponse(
         responseCode = "400",
         description = "CNPJ inválido",
@@ -98,8 +106,22 @@ public class CorretoraResource {
   @Operation(summary = "Exclui corretora sem vínculos")
   @ApiResponses({
     @ApiResponse(responseCode = "204", description = "Corretora excluída"),
-    @ApiResponse(responseCode = "404", description = "Corretora não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
-    @ApiResponse(responseCode = "409", description = "Corretora possui vínculos", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
+    @ApiResponse(
+        responseCode = "401",
+        description = "Usuário não autenticado",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Apenas administradores podem excluir corretoras",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Corretora não encontrada",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description = "Corretora possui vínculos",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class)))
   })
   public ResponseEntity<Void> excluir(@PathVariable Long id) {
     service.excluir(id);

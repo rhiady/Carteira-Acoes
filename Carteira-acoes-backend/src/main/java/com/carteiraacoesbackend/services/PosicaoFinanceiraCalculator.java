@@ -41,8 +41,16 @@ public class PosicaoFinanceiraCalculator {
         quantidadeVendida.signum() == 0 ? null : dividir(receitaBrutaVenda, quantidadeVendida);
     BigDecimal precoMedio = dividir(custoRestante, quantidadeAtual);
     if (cotacaoAtual == null) {
-      return new Resultado(null, precoMedio, precoMedioVenda, resultadoRealizado, null, null,
-          custoRestante, valorTotalComprado, receitaBrutaVenda);
+      return new Resultado(
+          null,
+          precoMedio,
+          precoMedioVenda,
+          resultadoRealizado,
+          null,
+          null,
+          custoRestante,
+          valorTotalComprado,
+          receitaBrutaVenda);
     }
     BigDecimal valorAtual = quantidadeAtual.multiply(cotacaoAtual);
     BigDecimal naoRealizado = valorAtual.subtract(custoRestante);
@@ -52,7 +60,10 @@ public class PosicaoFinanceiraCalculator {
         precoMedioVenda,
         resultadoRealizado,
         naoRealizado,
-        resultadoRealizado.add(naoRealizado), custoRestante, valorTotalComprado, receitaBrutaVenda);
+        resultadoRealizado.add(naoRealizado),
+        custoRestante,
+        valorTotalComprado,
+        receitaBrutaVenda);
   }
 
   private BigDecimal custoDaCompra(Operacao operacao) {

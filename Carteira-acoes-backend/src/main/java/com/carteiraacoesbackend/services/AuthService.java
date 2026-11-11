@@ -24,6 +24,11 @@ public class AuthService {
   }
 
   public LoginResponse login(LoginRequest request) {
+    Usuario usuario = authenticate(request);
+    return new LoginResponse(usuario.getId(), usuario.getNome(), usuario.getEmail());
+  }
+
+  public Usuario authenticate(LoginRequest request) {
     String email = request.email().trim().toLowerCase();
     Usuario usuario = repository.findByEmail(email).orElseThrow(this::invalidCredentials);
 
@@ -31,7 +36,7 @@ public class AuthService {
       throw invalidCredentials();
     }
 
-    return new LoginResponse(usuario.getId(), usuario.getNome(), usuario.getEmail());
+    return usuario;
   }
 
   private ApiException invalidCredentials() {

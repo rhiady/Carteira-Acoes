@@ -7,8 +7,8 @@ import com.carteiraacoesbackend.domains.Operacao;
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Mercado;
 import com.carteiraacoesbackend.domains.enums.Moeda;
-import com.carteiraacoesbackend.dto.CarteiraRequest;
 import com.carteiraacoesbackend.dto.AtualizarCarteiraRequest;
+import com.carteiraacoesbackend.dto.CarteiraRequest;
 import com.carteiraacoesbackend.dto.CarteiraResponse;
 import com.carteiraacoesbackend.dto.CarteiraResumoResponse;
 import com.carteiraacoesbackend.dto.PosicaoAcaoResponse;
@@ -138,7 +138,8 @@ public class CarteiraService {
   public void excluir(Long id) {
     Carteira carteira = obterEntidade(id);
     validarOwnership(carteira);
-    if (operacaoRepository.existsByCarteiraId(id) || carteiraAcaoRepository.existsByCarteiraId(id)) {
+    if (operacaoRepository.existsByCarteiraId(id)
+        || carteiraAcaoRepository.existsByCarteiraId(id)) {
       throw ApiException.conflict(
           "CARTEIRA_VINCULADA",
           "Não é possível excluir a carteira porque ela possui operações ou posições vinculadas.");
@@ -223,7 +224,8 @@ public class CarteiraService {
                     somarSomenteSeCompleto(respostas, PosicaoAcaoResponse::valorTotalComprado),
                     somarSomenteSeCompleto(respostas, PosicaoAcaoResponse::valorTotalVendido),
                     somarSomenteSeCompleto(respostas, PosicaoAcaoResponse::lucroPrejuizoRealizado),
-                    somarSomenteSeCompleto(respostas, PosicaoAcaoResponse::lucroPrejuizoNaoRealizado))));
+                    somarSomenteSeCompleto(
+                        respostas, PosicaoAcaoResponse::lucroPrejuizoNaoRealizado))));
     resumos.sort(Comparator.comparing(resumo -> resumo.moeda().name()));
     return new CarteiraResumoResponse(
         carteira.getId(), carteira.getNome(), posicoes.size(), resumos);

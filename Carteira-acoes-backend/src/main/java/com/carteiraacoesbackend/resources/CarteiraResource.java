@@ -1,7 +1,7 @@
 package com.carteiraacoesbackend.resources;
 
-import com.carteiraacoesbackend.dto.CarteiraRequest;
 import com.carteiraacoesbackend.dto.AtualizarCarteiraRequest;
+import com.carteiraacoesbackend.dto.CarteiraRequest;
 import com.carteiraacoesbackend.dto.CarteiraResponse;
 import com.carteiraacoesbackend.dto.CarteiraResumoResponse;
 import com.carteiraacoesbackend.dto.ErroResponse;
@@ -18,11 +18,11 @@ import java.net.URI;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -104,10 +104,17 @@ public class CarteiraResource {
   @Operation(summary = "Atualiza somente o nome da carteira")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Carteira atualizada"),
-    @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
-    @ApiResponse(responseCode = "404", description = "Carteira não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
+    @ApiResponse(
+        responseCode = "400",
+        description = "Dados inválidos",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Carteira não encontrada",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class)))
   })
-  public CarteiraResponse atualizar(@PathVariable Long id, @Valid @RequestBody AtualizarCarteiraRequest request) {
+  public CarteiraResponse atualizar(
+      @PathVariable Long id, @Valid @RequestBody AtualizarCarteiraRequest request) {
     return service.atualizar(id, request);
   }
 
@@ -115,8 +122,14 @@ public class CarteiraResource {
   @Operation(summary = "Exclui carteira sem vínculos")
   @ApiResponses({
     @ApiResponse(responseCode = "204", description = "Carteira excluída"),
-    @ApiResponse(responseCode = "404", description = "Carteira não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
-    @ApiResponse(responseCode = "409", description = "Carteira possui vínculos", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
+    @ApiResponse(
+        responseCode = "404",
+        description = "Carteira não encontrada",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description = "Carteira possui vínculos",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class)))
   })
   public ResponseEntity<Void> excluir(@PathVariable Long id) {
     service.excluir(id);

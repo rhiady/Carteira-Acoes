@@ -1,14 +1,7 @@
 package com.carteiraacoesbackend.domains;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.carteiraacoesbackend.domains.enums.Papel;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -37,6 +30,10 @@ public class Usuario extends AuditableEntity {
 
   @Column(nullable = false, length = 255)
   private String senha;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private Papel papel = Papel.USER;
 
   @Setter(AccessLevel.NONE)
   @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)

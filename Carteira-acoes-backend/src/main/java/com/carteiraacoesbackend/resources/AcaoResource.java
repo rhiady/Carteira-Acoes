@@ -22,8 +22,8 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,6 +47,14 @@ public class AcaoResource {
   @Operation(summary = "Cadastra uma ação usando dados do provedor do mercado")
   @ApiResponses({
     @ApiResponse(responseCode = "201", description = "Ação criada"),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Usuário não autenticado",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Apenas administradores podem criar ações",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
     @ApiResponse(
         responseCode = "400",
         description = "Ticker ou mercado inválido",
@@ -108,8 +116,22 @@ public class AcaoResource {
   @Operation(summary = "Exclui ação sem vínculos")
   @ApiResponses({
     @ApiResponse(responseCode = "204", description = "Ação excluída"),
-    @ApiResponse(responseCode = "404", description = "Ação não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
-    @ApiResponse(responseCode = "409", description = "Ação possui vínculos", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
+    @ApiResponse(
+        responseCode = "401",
+        description = "Usuário não autenticado",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Apenas administradores podem excluir ações",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Ação não encontrada",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description = "Ação possui vínculos",
+        content = @Content(schema = @Schema(implementation = ErroResponse.class)))
   })
   public ResponseEntity<Void> excluir(@PathVariable Long id) {
     service.excluir(id);

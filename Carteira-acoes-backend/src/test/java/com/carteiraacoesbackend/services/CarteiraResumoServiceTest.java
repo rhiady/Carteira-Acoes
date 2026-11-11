@@ -11,6 +11,7 @@ import com.carteiraacoesbackend.domains.Operacao;
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Mercado;
 import com.carteiraacoesbackend.domains.enums.Moeda;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.domains.enums.TipoOperacao;
 import com.carteiraacoesbackend.dto.CarteiraResumoResponse;
 import com.carteiraacoesbackend.dto.integrations.PtaxQuoteResponse;
@@ -159,6 +160,7 @@ class CarteiraResumoServiceTest {
     usuario.setNome("Ana");
     usuario.setEmail("ana" + System.nanoTime() + "@test.com");
     usuario.setSenha("senha");
+    usuario.setPapel(Papel.USER);
     usuarios.save(usuario);
     Corretora corretora = new Corretora();
     corretora.setCnpj(String.format("%014d", Math.floorMod(System.nanoTime(), 100000000000000L)));

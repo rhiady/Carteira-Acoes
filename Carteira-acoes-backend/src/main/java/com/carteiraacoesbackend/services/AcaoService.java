@@ -20,10 +20,10 @@ import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,8 +82,15 @@ public class AcaoService {
       AcaoMapper mapper,
       CurrencyConversionService currencyConversionService,
       com.carteiraacoesbackend.mappers.HistoricoCotacaoMapper historicoMapper) {
-    this(repository, historicos, null, cotacaoAdapter, atualizacaoService, mapper,
-        currencyConversionService, historicoMapper);
+    this(
+        repository,
+        historicos,
+        null,
+        cotacaoAdapter,
+        atualizacaoService,
+        mapper,
+        currencyConversionService,
+        historicoMapper);
   }
 
   @Transactional
@@ -143,7 +150,8 @@ public class AcaoService {
   @Transactional
   public void excluir(Long id) {
     Acao acao = obterEntidade(id);
-    if ((posicoes != null && posicoes.existsByAcaoId(id)) || historicos.existsByAcaoId(id)
+    if ((posicoes != null && posicoes.existsByAcaoId(id))
+        || historicos.existsByAcaoId(id)
         || repository.existsOperacoesById(id)) {
       throw ApiException.conflict(
           "ACAO_VINCULADA",
@@ -151,7 +159,6 @@ public class AcaoService {
     }
     repository.delete(acao);
   }
-
 
   public AcaoResponse buscarPorTicker(String ticker) {
     String normalizado =

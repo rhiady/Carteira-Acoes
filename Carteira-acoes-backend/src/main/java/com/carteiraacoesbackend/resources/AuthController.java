@@ -1,5 +1,6 @@
 package com.carteiraacoesbackend.resources;
 
+import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.dto.ErroResponse;
 import com.carteiraacoesbackend.dto.LoginRequest;
 import com.carteiraacoesbackend.dto.LoginResponse;
@@ -10,9 +11,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,9 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService service;
+  private final SecurityContextRepository securityContextRepository;
 
-  public AuthController(AuthService service) {
+  public AuthController(AuthService service, SecurityContextRepository securityContextRepository) {
     this.service = service;
+    this.securityContextRepository = securityContextRepository;
   }
 
   @Operation(summary = "Autentica um usuário por email e senha")
@@ -42,16 +52,21 @@ public class AuthController {
   })
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(
-      @Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-    LoginResponse response = service.login(request);
-    HttpSession session = httpRequest.getSession(false);
-    if (session == null) {
-      session = httpRequest.getSession(true);
-    } else {
-      httpRequest.changeSessionId();
-    }
-    session.setAttribute(
-        com.carteiraacoesbackend.services.CurrentUserService.SESSION_USER_ID, response.id());
+      @Valid @RequestBody LoginRequest request,
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse) {
+    Usuario usuario = service.authenticate(request);
+    Authentication authentication =
+        UsernamePasswordAuthenticationToken.authenticated(
+            usuario.getEmail(),
+            null,
+            List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getPapel().name())));
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(authentication);
+    SecurityContextHolder.setContext(context);
+    securityContextRepository.saveContext(context, httpRequest, httpResponse);
+    LoginResponse response =
+        new LoginResponse(usuario.getId(), usuario.getNome(), usuario.getEmail());
     return ResponseEntity.ok(response);
   }
 }

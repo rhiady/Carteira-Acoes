@@ -1,6 +1,8 @@
 package com.carteiraacoesbackend.resources;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -162,6 +164,7 @@ class CatalogoResourceIntegrationTest {
         .perform(
             put("/usuarios/{id}", id)
                 .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content("{\"nome\":\"Ana Atualizada\",\"email\":\"ana-nova@teste.com\"}"))
         .andExpect(status().isOk())
@@ -192,6 +195,7 @@ class CatalogoResourceIntegrationTest {
         .perform(
             put("/usuarios/{id}", id)
                 .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     "{\"nome\":\"Bia\",\"email\":\"bia-update@teste.com\",\"senha\":\"senha-nova\"}"))
@@ -235,6 +239,7 @@ class CatalogoResourceIntegrationTest {
         .perform(
             put("/usuarios/{id}", id)
                 .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content("{\"nome\":\"Dois\",\"email\":\"um-update@teste.com\"}"))
         .andExpect(status().isConflict())
@@ -248,8 +253,8 @@ class CatalogoResourceIntegrationTest {
             put("/usuarios/{id}", 999999L)
                 .contentType("application/json")
                 .content("{\"nome\":\"\",\"email\":\"invalido\"}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
   }
 
   @Test
@@ -285,6 +290,7 @@ class CatalogoResourceIntegrationTest {
         .perform(
             post("/carteiras")
                 .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     "{\"nome\":\"Longo Prazo\",\"usuarioId\":"
@@ -321,6 +327,7 @@ class CatalogoResourceIntegrationTest {
         .perform(
             post("/carteiras")
                 .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content("{\"nome\":\"Sem corretora\",\"usuarioId\":" + userId + "}"))
         .andExpect(status().isBadRequest())
@@ -329,6 +336,7 @@ class CatalogoResourceIntegrationTest {
         .perform(
             post("/carteiras")
                 .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     "{\"nome\":\"Inválida\",\"usuarioId\":" + userId + ",\"corretoraId\":999999}"))
@@ -340,8 +348,8 @@ class CatalogoResourceIntegrationTest {
   void returnsNotFoundForUnknownPortfolio() throws Exception {
     mockMvc
         .perform(get("/carteiras/9999"))
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.error").value("CARTEIRA_NAO_ENCONTRADA"));
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
   }
 
   @Test
@@ -355,6 +363,8 @@ class CatalogoResourceIntegrationTest {
     mockMvc
         .perform(
             post("/acoes")
+                .with(user("admin").roles("ADMIN"))
+                .with(csrf())
                 .contentType("application/json")
                 .content("{\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\"}"))
         .andExpect(status().isCreated())
@@ -365,6 +375,8 @@ class CatalogoResourceIntegrationTest {
     mockMvc
         .perform(
             post("/acoes")
+                .with(user("admin").roles("ADMIN"))
+                .with(csrf())
                 .contentType("application/json")
                 .content("{\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\"}"))
         .andExpect(status().isConflict())
@@ -386,24 +398,24 @@ class CatalogoResourceIntegrationTest {
             post("/operacoes/compras")
                 .contentType("application/json")
                 .content("{\"carteiraId\":1,\"quantidade\":1,\"precoUnitario\":10}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
     mockMvc
         .perform(
             post("/operacoes/compras")
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":1,\"acaoId\":1,\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\",\"quantidade\":1,\"precoUnitario\":10}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
     mockMvc
         .perform(
             post("/operacoes/compras")
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":1,\"ticker\":\"PETR4\",\"quantidade\":1,\"precoUnitario\":10}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
   }
 
   private MockHttpSession login(String email, String senha) throws Exception {

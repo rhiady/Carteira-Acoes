@@ -1,6 +1,7 @@
 package com.carteiraacoesbackend.mappers;
 
 import com.carteiraacoesbackend.domains.Usuario;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.dto.UsuarioRequest;
 import com.carteiraacoesbackend.dto.UsuarioResponse;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ public class UsuarioMapper {
     usuario.setNome(request.nome());
     usuario.setEmail(request.email());
     usuario.setSenha(request.senha());
+    usuario.setPapel(Papel.USER);
     return usuario;
   }
 

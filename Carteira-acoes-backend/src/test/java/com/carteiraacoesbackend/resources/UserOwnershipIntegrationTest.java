@@ -1,6 +1,7 @@
 package com.carteiraacoesbackend.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -13,6 +14,7 @@ import com.carteiraacoesbackend.domains.Corretora;
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Mercado;
 import com.carteiraacoesbackend.domains.enums.Moeda;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.repositories.AcaoRepository;
 import com.carteiraacoesbackend.repositories.CarteiraRepository;
 import com.carteiraacoesbackend.repositories.CorretoraRepository;
@@ -104,6 +106,7 @@ class UserOwnershipIntegrationTest {
         .perform(
             post("/operacoes/compras")
                 .session(login("ana-buy@test.com"))
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":"
@@ -117,6 +120,7 @@ class UserOwnershipIntegrationTest {
         .perform(
             post("/operacoes/vendas")
                 .session(login("ana-buy@test.com"))
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":"
@@ -149,6 +153,7 @@ class UserOwnershipIntegrationTest {
         .perform(
             put("/usuarios/{id}", joao.getId())
                 .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     "{\"nome\":\"Invadido\",\"email\":\"invadido@test.com\",\"senha\":\"nova\"}"))
@@ -169,6 +174,7 @@ class UserOwnershipIntegrationTest {
             .perform(
                 post("/carteiras")
                     .session(login("ana-create@test.com"))
+                    .with(csrf())
                     .contentType("application/json")
                     .content(
                         "{\"nome\":\"Forjada\",\"usuarioId\":"
@@ -192,6 +198,7 @@ class UserOwnershipIntegrationTest {
     usuario.setNome(email);
     usuario.setEmail(email);
     usuario.setSenha(passwords.encode("senha123"));
+    usuario.setPapel(Papel.USER);
     return usuarios.save(usuario);
   }
 

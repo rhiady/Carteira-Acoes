@@ -1,6 +1,8 @@
 package com.carteiraacoesbackend.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -13,6 +15,7 @@ import com.carteiraacoesbackend.domains.Corretora;
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Mercado;
 import com.carteiraacoesbackend.domains.enums.Moeda;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.repositories.AcaoRepository;
 import com.carteiraacoesbackend.repositories.CarteiraAcaoRepository;
 import com.carteiraacoesbackend.repositories.CarteiraRepository;
@@ -60,6 +63,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     usuario.setNome("Usuário de operações");
     usuario.setEmail("operacoes-" + System.nanoTime() + "@test.com");
     usuario.setSenha(passwordEncoder.encode("senha"));
+    usuario.setPapel(Papel.USER);
     usuarios.save(usuario);
 
     Corretora corretora = new Corretora();
@@ -100,6 +104,7 @@ class OperacaoResourcePersistenceIntegrationTest {
                 .getSession();
     mockMvc =
         MockMvcBuilders.webAppContextSetup(context)
+            .apply(springSecurity())
             .defaultRequest(get("/").session(session))
             .build();
   }
@@ -119,6 +124,8 @@ class OperacaoResourcePersistenceIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/compras")
+                .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     """
@@ -145,6 +152,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/vendas")
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     """
@@ -185,6 +193,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/compras")
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     """
@@ -276,6 +285,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/compras")
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     """
@@ -304,6 +314,8 @@ class OperacaoResourcePersistenceIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/compras")
+                .session(session)
+                .with(csrf())
                 .contentType("application/json")
                 .content(
                     """

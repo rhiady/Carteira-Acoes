@@ -5,14 +5,15 @@ import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.exceptions.ApiException;
 import com.carteiraacoesbackend.repositories.UsuarioRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Service
 public class CurrentUserService {
-  public static final String SESSION_USER_ID = CurrentUserService.class.getName() + ".userId";
-
   private final HttpServletRequest request;
   private final UsuarioRepository usuarios;
 
@@ -22,15 +23,14 @@ public class CurrentUserService {
   }
 
   public Usuario required() {
-    Object value =
-        request.getSession(false) == null
-            ? null
-            : request.getSession(false).getAttribute(SESSION_USER_ID);
-    if (!(value instanceof Long id)) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null
+        || !authentication.isAuthenticated()
+        || authentication instanceof AnonymousAuthenticationToken) {
       throw ApiException.unauthorized("USUARIO_NAO_AUTENTICADO", "Usuário não autenticado.");
     }
     return usuarios
-        .findById(id)
+        .findByEmail(authentication.getName())
         .orElseThrow(
             () -> ApiException.unauthorized("USUARIO_NAO_AUTENTICADO", "Usuário não autenticado."));
   }

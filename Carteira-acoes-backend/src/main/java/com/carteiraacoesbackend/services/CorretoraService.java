@@ -9,15 +9,15 @@ import com.carteiraacoesbackend.exceptions.ApiException;
 import com.carteiraacoesbackend.facades.CnpjFacade;
 import com.carteiraacoesbackend.facades.CvmFacade;
 import com.carteiraacoesbackend.mappers.CorretoraMapper;
-import com.carteiraacoesbackend.repositories.CorretoraRepository;
 import com.carteiraacoesbackend.repositories.CarteiraRepository;
+import com.carteiraacoesbackend.repositories.CorretoraRepository;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
