@@ -62,26 +62,26 @@ class UserOwnershipIntegrationTest {
     RequestPostProcessor session = login("ana@test.com");
 
     mockMvc
-        .perform(get("/carteiras/{id}", carteiraAna.getId()).with(session))
+        .perform(get("/api/carteiras/{id}", carteiraAna.getId()).with(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.nome").value("Ana"));
     mockMvc
-        .perform(get("/carteiras/{id}", carteiraJoao.getId()).with(session))
+        .perform(get("/api/carteiras/{id}", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/carteiras/{id}/acoes", carteiraJoao.getId()).with(session))
+        .perform(get("/api/carteiras/{id}/acoes", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/carteiras/{id}/resumo", carteiraJoao.getId()).with(session))
+        .perform(get("/api/carteiras/{id}/resumo", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/operacoes/carteiras/{id}", carteiraJoao.getId()).with(session))
+        .perform(get("/api/operacoes/carteiras/{id}", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/usuarios/{id}/carteiras", joao.getId()).with(session))
+        .perform(get("/api/usuarios/{id}/carteiras", joao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/carteiras").with(session))
+        .perform(get("/api/carteiras").with(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].nome").value("Ana"));
@@ -104,7 +104,7 @@ class UserOwnershipIntegrationTest {
 
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .with(login("ana-buy@test.com"))
                 .with(csrf())
                 .contentType("application/json")
@@ -118,7 +118,7 @@ class UserOwnershipIntegrationTest {
     assertThat(operacoes.count()).isEqualTo(antes);
     mockMvc
         .perform(
-            post("/operacoes/vendas")
+            post("/api/operacoes/vendas")
                 .with(login("ana-buy@test.com"))
                 .with(csrf())
                 .contentType("application/json")
@@ -138,26 +138,23 @@ class UserOwnershipIntegrationTest {
     Usuario joao = usuario("joao-profile@test.com");
     RequestPostProcessor session = login("ana-profile@test.com");
 
-    mockMvc.perform(get("/usuarios")).andExpect(status().isUnauthorized());
-    mockMvc.perform(get("/usuarios/{id}", ana.getId())).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/usuarios")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/usuarios/{id}", ana.getId())).andExpect(status().isUnauthorized());
     mockMvc
-        .perform(get("/usuarios").with(session))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].id").value(ana.getId()))
-        .andExpect(jsonPath("$.content[0].senha").doesNotExist());
+        .perform(get("/api/usuarios").with(session))
+        .andExpect(status().isForbidden());
     mockMvc
-        .perform(get("/usuarios/{id}", joao.getId()).with(session))
-        .andExpect(status().isNotFound());
+        .perform(get("/api/usuarios/{id}", joao.getId()).with(session))
+        .andExpect(status().isForbidden());
     mockMvc
         .perform(
-            put("/usuarios/{id}", joao.getId())
+            put("/api/usuarios/{id}", joao.getId())
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content(
                     "{\"login\":\"invadido@test.com\",\"ativo\":true}"))
-        .andExpect(status().isNotFound());
+        .andExpect(status().isForbidden());
 
     assertThat(usuarios.findById(joao.getId()).orElseThrow().getEmail())
         .isEqualTo("joao-profile@test.com");
@@ -172,7 +169,7 @@ class UserOwnershipIntegrationTest {
     String body =
         mockMvc
             .perform(
-                post("/carteiras")
+                post("/api/carteiras")
                     .with(login("ana-create@test.com"))
                     .with(csrf())
                     .contentType("application/json")
@@ -224,7 +221,7 @@ class UserOwnershipIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"login\":\"" + email + "\",\"password\":\"senha123\"}"))
+                    .content("{\"login\":\"" + email + "\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

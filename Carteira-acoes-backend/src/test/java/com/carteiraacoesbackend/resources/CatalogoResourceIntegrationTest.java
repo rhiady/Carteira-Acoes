@@ -3,6 +3,7 @@ package com.carteiraacoesbackend.resources;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -62,9 +63,9 @@ class CatalogoResourceIntegrationTest {
   void createsUserAndDoesNotExposePassword() throws Exception {
     mockMvc
         .perform(
-            post("/usuarios")
+            post("/api/usuarios").with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
-                .content("{\"login\":\"ana@teste.com\",\"password\":\"segredo123\"}"))
+                .content("{\"login\":\"ana@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.login").value("ana@teste.com"))
         .andExpect(jsonPath("$.papel").value("USER"))
@@ -76,65 +77,65 @@ class CatalogoResourceIntegrationTest {
   void rejectsMalformedJsonWithStandardErrorBody() throws Exception {
     mockMvc
         .perform(
-            post("/usuarios")
+            post("/api/usuarios").with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content("{\"login\":\"ana@teste.com\",\"password\":"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.error").value("INVALID_REQUEST_FORMAT"))
         .andExpect(jsonPath("$.message").value("Formato da requisição é inválido."))
-        .andExpect(jsonPath("$.path").value("/usuarios"));
+        .andExpect(jsonPath("$.path").value("/api/usuarios"));
   }
 
   @Test
   void rejectsInvalidPathAndQueryTypesWithStandardErrorBody() throws Exception {
     mockMvc
-        .perform(get("/acoes/{id}", "not-a-number"))
+        .perform(get("/api/acoes/{id}", "not-a-number"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("INVALID_REQUEST_FORMAT"))
         .andExpect(jsonPath("$.message").value("Formato da requisição é inválido."));
 
     mockMvc
-        .perform(get("/acoes/{id}/historico", 1).param("inicio", "not-a-date"))
+        .perform(get("/api/acoes/{id}/historico", 1).param("inicio", "not-a-date"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("INVALID_REQUEST_FORMAT"))
-        .andExpect(jsonPath("$.path").value("/acoes/1/historico"));
+        .andExpect(jsonPath("$.path").value("/api/acoes/1/historico"));
   }
 
   @Test
   void rejectsMethodValidationWithStandardErrorBody() throws Exception {
     mockMvc
-        .perform(get("/acoes/ticker/{ticker}", "_INVALID"))
+        .perform(get("/api/acoes/ticker/{ticker}", "_INVALID"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-        .andExpect(jsonPath("$.path").value("/acoes/ticker/_INVALID"));
+        .andExpect(jsonPath("$.path").value("/api/acoes/ticker/_INVALID"));
   }
 
   @Test
   void validatesPaginationAndPublicSortBeforeQuerying() throws Exception {
     mockMvc
-        .perform(get("/acoes").param("page", "-1"))
+        .perform(get("/api/acoes").param("page", "-1"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("INVALID_PAGINATION"));
     mockMvc
-        .perform(get("/acoes").param("size", "0"))
+        .perform(get("/api/acoes").param("size", "0"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("INVALID_PAGINATION"));
     mockMvc
-        .perform(get("/acoes").param("size", "101"))
+        .perform(get("/api/acoes").param("size", "101"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("INVALID_PAGINATION"));
     mockMvc
-        .perform(get("/acoes").param("sort", "ticker,sideways"))
+        .perform(get("/api/acoes").param("sort", "ticker,sideways"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("INVALID_SORT"));
     mockMvc
-        .perform(get("/acoes").param("sort", "internalField,asc"))
+        .perform(get("/api/acoes").param("sort", "internalField,asc"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     mockMvc
-        .perform(get("/acoes").param("page", "0").param("size", "20").param("sort", "ticker,desc"))
+        .perform(get("/api/acoes").param("page", "0").param("size", "20").param("sort", "ticker,desc"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content").isArray())
         .andExpect(jsonPath("$.number").value(0))
@@ -151,20 +152,20 @@ class CatalogoResourceIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/usuarios")
+                post("/api/usuarios").with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
-                        "{\"login\":\"ana-update@teste.com\",\"password\":\"segredo123\"}"))
+                        "{\"login\":\"ana-update@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
             .andReturn()
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    RequestPostProcessor session = login("ana-update@teste.com", "segredo123");
+    RequestPostProcessor session = admin();
     String senhaAnterior = usuarios.findById(id).orElseThrow().getSenha();
 
     mockMvc
         .perform(
-            put("/usuarios/{id}", id)
+            put("/api/usuarios/{id}", id)
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -181,20 +182,20 @@ class CatalogoResourceIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/usuarios")
+                post("/api/usuarios").with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
-                        "{\"login\":\"bia-update@teste.com\",\"password\":\"senha-antiga\"}"))
+                        "{\"login\":\"bia-update@teste.com\",\"password\":\"senha-antiga\",\"papel\":\"USER\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    RequestPostProcessor session = login("bia-update@teste.com", "senha-antiga");
+    RequestPostProcessor session = admin();
 
     mockMvc
         .perform(
-            put("/usuarios/{id}", id)
+            put("/api/usuarios/{id}", id)
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -211,7 +212,7 @@ class CatalogoResourceIntegrationTest {
         .andExpect(status().isOk());
     mockMvc
         .perform(
-            put("/usuarios/{id}/senha", id)
+            put("/api/usuarios/{id}/senha", id)
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -233,27 +234,27 @@ class CatalogoResourceIntegrationTest {
   void rejectsDuplicateEmailOnUserUpdate() throws Exception {
     mockMvc
         .perform(
-            post("/usuarios")
+            post("/api/usuarios").with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content(
-                    "{\"login\":\"um-update@teste.com\",\"password\":\"segredo123\"}"))
+                    "{\"login\":\"um-update@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
         .andExpect(status().isCreated());
     String response =
         mockMvc
             .perform(
-                post("/usuarios")
+                post("/api/usuarios").with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
-                        "{\"login\":\"dois-update@teste.com\",\"password\":\"segredo123\"}"))
+                        "{\"login\":\"dois-update@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
             .andReturn()
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    RequestPostProcessor session = login("dois-update@teste.com", "segredo123");
+    RequestPostProcessor session = admin();
 
     mockMvc
         .perform(
-            put("/usuarios/{id}", id)
+            put("/api/usuarios/{id}", id)
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -266,7 +267,7 @@ class CatalogoResourceIntegrationTest {
   void rejectsInvalidUserUpdate() throws Exception {
     mockMvc
         .perform(
-            put("/usuarios/{id}", 999999L)
+            put("/api/usuarios/{id}", 999999L)
                 .contentType("application/json")
                 .content("{\"nome\":\"\",\"email\":\"invalido\"}"))
         .andExpect(status().isUnauthorized())
@@ -275,12 +276,12 @@ class CatalogoResourceIntegrationTest {
 
   @Test
   void rejectsDuplicateEmailAndReturnsStandardError() throws Exception {
-    String body = "{\"login\":\"bruno@teste.com\",\"password\":\"segredo123\"}";
+    String body = "{\"login\":\"bruno@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}";
     mockMvc
-        .perform(post("/usuarios").contentType("application/json").content(body))
+        .perform(post("/api/usuarios").with(user("admin").roles("ADMIN")).contentType("application/json").content(body))
         .andExpect(status().isCreated());
     mockMvc
-        .perform(post("/usuarios").contentType("application/json").content(body))
+        .perform(post("/api/usuarios").with(user("admin").roles("ADMIN")).contentType("application/json").content(body))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.error").value("EMAIL_DUPLICADO"));
   }
@@ -290,10 +291,10 @@ class CatalogoResourceIntegrationTest {
     String userResponse =
         mockMvc
             .perform(
-                post("/usuarios")
+                post("/api/usuarios").with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
-                        "{\"login\":\"carla@teste.com\",\"password\":\"segredo123\"}"))
+                        "{\"login\":\"carla@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -304,7 +305,7 @@ class CatalogoResourceIntegrationTest {
 
     mockMvc
         .perform(
-            post("/carteiras")
+            post("/api/carteiras")
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -317,7 +318,7 @@ class CatalogoResourceIntegrationTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.corretoraId").value(corretoraId));
     mockMvc
-        .perform(get("/usuarios/{id}/carteiras?page=0&size=20", userId).with(session))
+        .perform(get("/api/usuarios/{id}/carteiras?page=0&size=20", userId).with(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].nome").value("Longo Prazo"))
         .andExpect(jsonPath("$.content[0].corretoraId").value(corretoraId));
@@ -328,10 +329,10 @@ class CatalogoResourceIntegrationTest {
     String userResponse =
         mockMvc
             .perform(
-                post("/usuarios")
+                post("/api/usuarios").with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
-                        "{\"login\":\"davi@teste.com\",\"password\":\"segredo123\"}"))
+                        "{\"login\":\"davi@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -341,7 +342,7 @@ class CatalogoResourceIntegrationTest {
 
     mockMvc
         .perform(
-            post("/carteiras")
+            post("/api/carteiras")
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -350,7 +351,7 @@ class CatalogoResourceIntegrationTest {
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     mockMvc
         .perform(
-            post("/carteiras")
+            post("/api/carteiras")
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -363,7 +364,7 @@ class CatalogoResourceIntegrationTest {
   @Test
   void returnsNotFoundForUnknownPortfolio() throws Exception {
     mockMvc
-        .perform(get("/carteiras/9999"))
+        .perform(get("/api/carteiras/9999"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
   }
@@ -378,19 +379,19 @@ class CatalogoResourceIntegrationTest {
                 "Petrobras S.A."));
     mockMvc
         .perform(
-            post("/acoes")
+            post("/api/acoes")
                 .with(user("admin").roles("ADMIN"))
                 .with(csrf())
                 .contentType("application/json")
                 .content("{\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\"}"))
         .andExpect(status().isCreated())
         .andExpect(
-            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/acoes/\\d+")))
+            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/api/acoes/\\d+")))
         .andExpect(jsonPath("$.ticker").value("PETR4"))
         .andExpect(jsonPath("$.nomeEmpresa").value("Petrobras S.A."));
     mockMvc
         .perform(
-            post("/acoes")
+            post("/api/acoes")
                 .with(user("admin").roles("ADMIN"))
                 .with(csrf())
                 .contentType("application/json")
@@ -402,7 +403,7 @@ class CatalogoResourceIntegrationTest {
     org.assertj.core.api.Assertions.assertThat(posicoes.count()).isZero();
     org.assertj.core.api.Assertions.assertThat(operacoes.count()).isZero();
     mockMvc
-        .perform(get("/acoes?page=0&size=20"))
+        .perform(get("/api/acoes?page=0&size=20"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content").isArray());
   }
@@ -411,14 +412,14 @@ class CatalogoResourceIntegrationTest {
   void rejectsPurchasesWithInvalidStockIdentifiers() throws Exception {
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .contentType("application/json")
                 .content("{\"carteiraId\":1,\"quantidade\":1,\"precoUnitario\":10}"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":1,\"acaoId\":1,\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\",\"quantidade\":1,\"precoUnitario\":10}"))
@@ -426,7 +427,7 @@ class CatalogoResourceIntegrationTest {
         .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":1,\"ticker\":\"PETR4\",\"quantidade\":1,\"precoUnitario\":10}"))
@@ -450,6 +451,10 @@ class CatalogoResourceIntegrationTest {
       request.addHeader("Authorization", "Bearer " + token);
       return request;
     };
+  }
+
+  private RequestPostProcessor admin() {
+    return user("admin").roles("ADMIN");
   }
 
   private Corretora criarCorretora() {

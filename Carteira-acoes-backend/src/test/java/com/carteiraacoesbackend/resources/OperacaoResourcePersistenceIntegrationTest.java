@@ -106,7 +106,7 @@ class OperacaoResourcePersistenceIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"login\":\"" + email + "\",\"password\":\"senha\"}"))
+                    .content("{\"login\":\"" + email + "\",\"password\":\"senha\",\"papel\":\"USER\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -132,7 +132,7 @@ class OperacaoResourcePersistenceIntegrationTest {
   void persistsPurchaseAndSaleSubmittedThroughHttp() throws Exception {
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
@@ -143,7 +143,7 @@ class OperacaoResourcePersistenceIntegrationTest {
                         .formatted(carteira.getId(), acao.getId())))
         .andExpect(status().isCreated())
         .andExpect(
-            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/operacoes/\\d+")))
+            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/api/operacoes/\\d+")))
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.ticker").value("TEST3"))
         .andExpect(jsonPath("$.nomeEmpresa").value("Empresa de teste"))
@@ -160,7 +160,7 @@ class OperacaoResourcePersistenceIntegrationTest {
 
     mockMvc
         .perform(
-            post("/operacoes/vendas")
+            post("/api/operacoes/vendas")
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -170,7 +170,7 @@ class OperacaoResourcePersistenceIntegrationTest {
                         .formatted(carteira.getId(), acao.getId())))
         .andExpect(status().isCreated())
         .andExpect(
-            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/operacoes/\\d+")))
+            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/api/operacoes/\\d+")))
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.ticker").value("TEST3"))
         .andExpect(jsonPath("$.nomeEmpresa").value("Empresa de teste"))
@@ -186,7 +186,7 @@ class OperacaoResourcePersistenceIntegrationTest {
         .isEqualByComparingTo("1");
 
     mockMvc
-        .perform(get("/operacoes/carteiras/{carteiraId}?page=0&size=20", carteira.getId()))
+        .perform(get("/api/operacoes/carteiras/{carteiraId}?page=0&size=20", carteira.getId()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content").isArray())
         .andExpect(jsonPath("$.totalElements").value(2))
@@ -201,7 +201,7 @@ class OperacaoResourcePersistenceIntegrationTest {
   void returnsNullAverageSalePriceForPositionWithoutSales() throws Exception {
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -212,7 +212,7 @@ class OperacaoResourcePersistenceIntegrationTest {
         .andExpect(status().isCreated());
 
     mockMvc
-        .perform(get("/carteiras/{id}/acoes?page=0&size=20", carteira.getId()))
+        .perform(get("/api/carteiras/{id}/acoes?page=0&size=20", carteira.getId()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].ticker").value("TEST3"))
         .andExpect(
@@ -229,7 +229,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     comprar(bbdc4, "1");
 
     mockMvc
-        .perform(get("/carteiras/{id}/acoes?sort=ticker,asc", carteira.getId()))
+        .perform(get("/api/carteiras/{id}/acoes?sort=ticker,asc", carteira.getId()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].ticker").value("BBDC4"))
         .andExpect(jsonPath("$.content[1].ticker").value("TEST3"))
@@ -245,7 +245,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     comprar(bbdc4, "1");
 
     mockMvc
-        .perform(get("/carteiras/{id}/acoes?sort=ticker,desc", carteira.getId()))
+        .perform(get("/api/carteiras/{id}/acoes?sort=ticker,desc", carteira.getId()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].ticker").value("VALE3"))
         .andExpect(jsonPath("$.content[1].ticker").value("TEST3"))
@@ -261,7 +261,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     comprar(bbdc4, "1");
 
     mockMvc
-        .perform(get("/carteiras/{id}/acoes?page=1&size=1&sort=ticker,asc", carteira.getId()))
+        .perform(get("/api/carteiras/{id}/acoes?page=1&size=1&sort=ticker,asc", carteira.getId()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].ticker").value("TEST3"))
         .andExpect(jsonPath("$.number").value(1))
@@ -274,7 +274,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     comprar(acao, "1");
 
     mockMvc
-        .perform(get("/carteiras/{id}/acoes?sort=nomeEmpresa,asc", carteira.getId()))
+        .perform(get("/api/carteiras/{id}/acoes?sort=nomeEmpresa,asc", carteira.getId()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
   }
@@ -284,7 +284,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     comprar(acao, "1");
 
     mockMvc
-        .perform(get("/carteiras/{id}/acoes", carteira.getId()))
+        .perform(get("/api/carteiras/{id}/acoes", carteira.getId()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].ticker").value("TEST3"));
   }
@@ -293,7 +293,7 @@ class OperacaoResourcePersistenceIntegrationTest {
   void rejectsZeroManualPriceWithoutPersistingPurchase() throws Exception {
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -322,7 +322,7 @@ class OperacaoResourcePersistenceIntegrationTest {
   private void comprar(Acao acaoCompra, String quantidade) throws Exception {
     mockMvc
         .perform(
-            post("/operacoes/compras")
+            post("/api/operacoes/compras")
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")

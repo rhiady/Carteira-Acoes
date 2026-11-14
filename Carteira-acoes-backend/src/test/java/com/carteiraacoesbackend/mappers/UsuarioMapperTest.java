@@ -2,8 +2,8 @@ package com.carteiraacoesbackend.mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.dto.UsuarioCreateRequest;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.dto.UsuarioResponse;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +14,7 @@ class UsuarioMapperTest {
     UsuarioMapper mapper = new UsuarioMapper();
     UsuarioResponse response =
         mapper.toResponse(
-            mapper.toEntity(new UsuarioCreateRequest("ana@teste.com", "segredo123"), "hash"));
+            mapper.toEntity(new UsuarioCreateRequest("ana@teste.com", "segredo123", Papel.USER), "hash"));
 
     assertThat(response.login()).isEqualTo("ana@teste.com");
     assertThat(response.papel()).isEqualTo(Papel.USER);

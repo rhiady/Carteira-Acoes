@@ -12,7 +12,7 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void returnsStandardErrorBodyForBusinessErrors() {
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/operacoes/vendas");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/operacoes/vendas");
     var response =
         new GlobalExceptionHandler()
             .handleApi(
@@ -23,13 +23,13 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
     assertThat(body).isNotNull();
     assertThat(body.error()).isEqualTo("QUANTIDADE_INSUFICIENTE");
-    assertThat(body.path()).isEqualTo("/operacoes/vendas");
+    assertThat(body.path()).isEqualTo("/api/operacoes/vendas");
     assertThat(body.timestamp()).isNotNull();
   }
 
   @Test
   void returnsSafeConflictForConcurrentModification() {
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/operacoes/vendas");
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/operacoes/vendas");
     var response =
         new GlobalExceptionHandler()
             .handleOptimisticLock(
@@ -40,6 +40,6 @@ class GlobalExceptionHandlerTest {
     assertThat(body).isNotNull();
     assertThat(body.error()).isEqualTo("CONCURRENT_MODIFICATION");
     assertThat(body.message()).doesNotContain("persistence");
-    assertThat(body.path()).isEqualTo("/operacoes/vendas");
+    assertThat(body.path()).isEqualTo("/api/operacoes/vendas");
   }
 }

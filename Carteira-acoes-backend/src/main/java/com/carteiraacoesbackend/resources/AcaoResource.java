@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/acoes")
+@RequestMapping("/api/acoes")
 @Validated
 @Tag(name = "Ações e cotações")
 public class AcaoResource {

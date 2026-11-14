@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api")
 @Tag(name = "Carteiras")
 public class CarteiraResource {
 

@@ -12,7 +12,6 @@ import com.carteiraacoesbackend.repositories.UsuarioRepository;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -35,22 +34,19 @@ public class UsuarioService {
   private final UsuarioRepository repository;
   private final UsuarioMapper mapper;
   private final PasswordEncoder passwordEncoder;
-  private final CurrentUserService currentUser;
 
   @Autowired
   public UsuarioService(
       UsuarioRepository repository,
       UsuarioMapper mapper,
-      PasswordEncoder passwordEncoder,
-      CurrentUserService currentUser) {
+      PasswordEncoder passwordEncoder) {
     this.repository = repository;
     this.mapper = mapper;
     this.passwordEncoder = passwordEncoder;
-    this.currentUser = currentUser;
   }
 
   public UsuarioService(UsuarioRepository repository, UsuarioMapper mapper) {
-    this(repository, mapper, new BCryptPasswordEncoder(), null);
+    this(repository, mapper, new BCryptPasswordEncoder());
   }
 
   @Transactional
@@ -64,13 +60,11 @@ public class UsuarioService {
   }
 
   public UsuarioResponse buscarPorId(Long id) {
-    requireSelfIfWebRequest(id);
     return mapper.toResponse(obterEntidade(id));
   }
 
   @Transactional
   public UsuarioResponse atualizar(Long id, UsuarioUpdateRequest request) {
-    requireSelfIfWebRequest(id);
     Usuario usuario = obterEntidade(id);
     String login = request.login().trim().toLowerCase();
     if (repository.existsByEmailAndIdNot(login, id)) {
@@ -84,7 +78,6 @@ public class UsuarioService {
 
   @Transactional
   public UsuarioResponse alterarSenha(Long id, AlterarSenhaRequest request) {
-    requireSelfIfWebRequest(id);
     Usuario usuario = obterEntidade(id);
     usuario.setSenha(passwordEncoder.encode(request.password()));
     return mapper.toResponse(repository.save(usuario));
@@ -102,20 +95,7 @@ public class UsuarioService {
 
   public Page<UsuarioResponse> listar(Pageable pageable) {
     pageable = PageableSupport.translate(pageable, SORT_FIELDS, DEFAULT_SORT);
-    if (currentUser != null && currentUser.isWebRequest()) {
-      Usuario usuario = currentUser.required();
-      if (pageable.getOffset() > 0) {
-        return new PageImpl<>(java.util.List.of(), pageable, 1);
-      }
-      return new PageImpl<>(java.util.List.of(mapper.toResponse(usuario)), pageable, 1);
-    }
     return repository.findAll(pageable).map(mapper::toResponse);
-  }
-
-  private void requireSelfIfWebRequest(Long id) {
-    if (currentUser != null && currentUser.isWebRequest()) {
-      currentUser.requireUserId(id);
-    }
   }
 
   private boolean isAdmin() {

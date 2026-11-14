@@ -52,7 +52,7 @@ class CorretoraResourceIntegrationTest {
 
     mockMvc
         .perform(
-            post("/corretoras")
+            post("/api/corretoras")
                 .contentType("application/json")
                 .content("{\"cnpj\":\"61.855.045/0001-32\"}"))
         .andExpect(status().isCreated())
@@ -64,7 +64,7 @@ class CorretoraResourceIntegrationTest {
   void doesNotPersistBrokerMissingFromCvm() throws Exception {
     mockMvc
         .perform(
-            post("/corretoras")
+            post("/api/corretoras")
                 .contentType("application/json")
                 .content("{\"cnpj\":\"60.746.948/0001-12\"}"))
         .andExpect(status().isUnprocessableEntity())
@@ -77,11 +77,11 @@ class CorretoraResourceIntegrationTest {
   void rejectsMalformedCnpjBeforeCallingTheDomain() throws Exception {
     mockMvc
         .perform(
-            post("/corretoras").contentType("application/json").content("{\"cnpj\":\"123ABC\"}"))
+            post("/api/corretoras").contentType("application/json").content("{\"cnpj\":\"123ABC\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     mockMvc
-        .perform(get("/corretoras/cnpj/{cnpj}", "123ABC"))
+        .perform(get("/api/corretoras/cnpj/{cnpj}", "123ABC"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("CNPJ_INVALIDO"));
 

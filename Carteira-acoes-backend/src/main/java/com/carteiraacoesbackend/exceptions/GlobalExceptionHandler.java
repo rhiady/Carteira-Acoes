@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -25,6 +26,12 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErroResponse> handleApi(
       ApiException exception, HttpServletRequest request) {
     return response(exception.getStatus(), exception.getCode(), exception.getMessage(), request);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErroResponse> handleAccessDenied(
+      AccessDeniedException exception, HttpServletRequest request) {
+    return response(HttpStatus.FORBIDDEN, "FORBIDDEN", "Acesso negado.", request);
   }
 
   @ExceptionHandler({

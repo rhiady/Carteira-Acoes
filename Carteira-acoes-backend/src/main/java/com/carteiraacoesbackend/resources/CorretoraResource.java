@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/corretoras")
+@RequestMapping("/api/corretoras")
 @Validated
 @Tag(name = "Corretoras")
 public class CorretoraResource {

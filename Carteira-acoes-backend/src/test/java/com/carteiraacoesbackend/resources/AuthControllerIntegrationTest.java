@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.carteiraacoesbackend.repositories.UsuarioRepository;
+import com.carteiraacoesbackend.domains.Usuario;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import java.time.Instant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -17,9 +19,11 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 @SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureMockMvc
@@ -28,6 +32,7 @@ class AuthControllerIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UsuarioRepository usuarios;
+  @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private JwtDecoder jwtDecoder;
   @Autowired private JwtEncoder jwtEncoder;
 
@@ -116,6 +121,25 @@ class AuthControllerIntegrationTest {
   }
 
   @Test
+  void rejectsLoginForDisabledUser() throws Exception {
+    Usuario usuario = new Usuario();
+    usuario.setNome("desativado@email.com");
+    usuario.setEmail("desativado@email.com");
+    usuario.setSenha(passwordEncoder.encode("senha123"));
+    usuario.setPapel(Papel.USER);
+    usuario.setAtivo(false);
+    usuarios.save(usuario);
+
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType("application/json")
+                .content("{\"login\":\"desativado@email.com\",\"password\":\"senha123\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("CREDENCIAIS_INVALIDAS"));
+  }
+
+  @Test
   void rejectsExpiredToken() throws Exception {
     mockMvc
         .perform(
@@ -176,9 +200,9 @@ class AuthControllerIntegrationTest {
   private void criarUsuario() throws Exception {
     mockMvc
         .perform(
-            post("/usuarios")
+            post("/api/usuarios").with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
-                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
         .andExpect(status().isCreated());
   }
 }

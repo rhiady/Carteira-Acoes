@@ -25,7 +25,7 @@ class WebConfigIntegrationTest {
   @Test
   void allowsConfiguredFrontendOrigin() throws Exception {
     mockMvc
-        .perform(get("/usuarios").header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN))
+        .perform(get("/api/usuarios").header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN))
         .andExpect(status().isUnauthorized())
         .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED_ORIGIN))
         .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
@@ -35,7 +35,7 @@ class WebConfigIntegrationTest {
   void answersPreflightForAllowedOperation() throws Exception {
     mockMvc
         .perform(
-            options("/usuarios")
+            options("/api/usuarios")
                 .header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN)
                 .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
@@ -51,7 +51,7 @@ class WebConfigIntegrationTest {
   @Test
   void rejectsUnconfiguredOrigin() throws Exception {
     mockMvc
-        .perform(get("/usuarios").header(HttpHeaders.ORIGIN, "https://untrusted.example"))
+        .perform(get("/api/usuarios").header(HttpHeaders.ORIGIN, "https://untrusted.example"))
         .andExpect(status().isForbidden())
         .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
   }

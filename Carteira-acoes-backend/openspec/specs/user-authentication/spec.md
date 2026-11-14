@@ -47,7 +47,7 @@ O sistema MUST NOT incluir a senha, hash da senha ou qualquer segredo de autenti
 - **THEN** o corpo da resposta MUST conter somente o token e seus metadados públicos, sem campo ou valor de senha
 
 ### Requirement: Compatibilidade e escopo da autenticação
-O sistema MUST manter os endpoints de negócio funcionando com o cabeçalho `Authorization: Bearer <token>` e MUST NOT depender de sessão HTTP para autenticar requisições.
+O sistema MUST manter os endpoints de negócio funcionando com o cabeçalho `Authorization: Bearer <token>`, MUST NOT depender de sessão HTTP para autenticar requisições e MUST tratar usuários com `ativo=false` como contas desabilitadas.
 
 #### Scenario: Endpoint protegido com token válido
 - **WHEN** um endpoint protegido recebe um token JWT válido
@@ -60,3 +60,7 @@ O sistema MUST manter os endpoints de negócio funcionando com o cabeçalho `Aut
 #### Scenario: Endpoints existentes
 - **WHEN** um endpoint existente é chamado com um token válido e nas condições funcionais previamente suportadas
 - **THEN** seu comportamento funcional MUST permanecer compatível com o comportamento anterior
+
+#### Scenario: Login de usuário desativado
+- **WHEN** uma identidade com `ativo=false` tenta autenticar
+- **THEN** o sistema MUST rejeitar o login e MUST emitir nenhum token

@@ -94,7 +94,7 @@ Com a aplicação em execução:
 
 ### Conexão do frontend
 
-A URL base local da API é `http://localhost:8080` e os endpoints não usam um prefixo adicional: por exemplo, `GET http://localhost:8080/usuarios`.
+A URL base local da API é `http://localhost:8080` e todos os endpoints de negócio usam o prefixo `/api`: por exemplo, `GET http://localhost:8080/api/usuarios`.
 
 ## Execução com Docker Compose
 
@@ -130,33 +130,33 @@ As listagens aceitam paginação do Spring Data, por exemplo `?page=0&size=20&so
 
 | Recurso | Operações |
 | --- | --- |
-| Usuários | `POST /usuarios`, `GET /usuarios`, `GET /usuarios/{id}` |
-| Carteiras | `POST /carteiras`, `GET /carteiras`, `GET /carteiras/{id}`, `GET /usuarios/{usuarioId}/carteiras`, `GET /carteiras/{id}/acoes` |
-| Ações | `POST /acoes`, `GET /acoes`, `GET /acoes/{id}`, `GET /acoes/ticker/{ticker}`, `POST /acoes/{id}/cotacao` |
-| Corretoras | `POST /corretoras`, `GET /corretoras`, `GET /corretoras/{id}`, `GET /corretoras/cnpj/{cnpj}` |
-| Operações | `POST /operacoes/compras`, `POST /operacoes/vendas`, `GET /operacoes/{id}`, `GET /operacoes/carteiras/{carteiraId}` |
+| Usuários | `POST /api/usuarios`, `GET /api/usuarios`, `GET /api/usuarios/{id}`, `PUT /api/usuarios/{id}`, `PUT /api/usuarios/{id}/papel`, `PUT /api/usuarios/{id}/senha` |
+| Carteiras | `POST /api/carteiras`, `GET /api/carteiras`, `GET /api/carteiras/{id}`, `GET /api/usuarios/{usuarioId}/carteiras`, `GET /api/carteiras/{id}/acoes` |
+| Ações | `POST /api/acoes`, `GET /api/acoes`, `GET /api/acoes/{id}`, `GET /api/acoes/ticker/{ticker}`, `POST /api/acoes/{id}/cotacao` |
+| Corretoras | `POST /api/corretoras`, `GET /api/corretoras`, `GET /api/corretoras/{id}`, `GET /api/corretoras/cnpj/{cnpj}` |
+| Operações | `POST /api/operacoes/compras`, `POST /api/operacoes/vendas`, `GET /api/operacoes/{id}`, `GET /api/operacoes/carteiras/{carteiraId}` |
 
 ### Corpos de criação
 
 ```json
-POST /usuarios
-{"nome":"Ana Silva","email":"ana@example.com","senha":"uma-senha-segura"}
+POST /api/usuarios
+{"login":"ana@example.com","password":"uma-senha-segura","papel":"USER"}
 ```
 
 ```json
-POST /carteiras
+POST /api/carteiras
 {"nome":"Longo prazo","usuarioId":1}
 ```
 
 ```json
-POST /corretoras
+POST /api/corretoras
 {"cnpj":"00.000.000/0001-00"}
 ```
 
 Não envie nome, endereço ou CEP da corretora: a API os consulta pelo CNPJ. O cadastro falha se a corretora não for localizada na base da CVM.
 
 ```json
-POST /acoes
+POST /api/acoes
 {"ticker":"PETR4","mercado":"BRASIL"}
 ```
 
@@ -169,13 +169,13 @@ As respostas de ações do mercado `EUA` preservam `cotacaoAtual` e `moeda` em U
 Os equivalentes usam a cotação de venda USD/BRL mais recente publicada pela [PTAX do Banco Central](https://www.bcb.gov.br/estabilidadefinanceira/historicocotacoes), com precisão decimal. Em fins de semana ou feriados, a referência pode ser de um dia útil anterior. Se a PTAX estiver indisponível ou devolver uma taxa inválida, a resposta mantém os valores originais em USD e omite todos os campos de conversão; nenhuma taxa estimada é usada.
 
 ```json
-POST /operacoes/compras
+POST /api/operacoes/compras
 {"carteiraId":1,"acaoId":1,"quantidade":10,"precoUnitario":25.50,"corretagem":0,"impostos":0,"valorAdicional":0}
 
-POST /operacoes/compras
+POST /api/operacoes/compras
 {"carteiraId":1,"ticker":"PETR4","mercado":"BRASIL","quantidade":10,"precoUnitario":25.50,"corretagem":0,"impostos":0,"valorAdicional":0}
 
-POST /operacoes/vendas
+POST /api/operacoes/vendas
 {"carteiraId":1,"acaoId":1,"quantidade":5,"precoUnitario":27.80,"corretagem":0,"impostos":0,"valorAdicional":0}
 ```
 
@@ -193,7 +193,7 @@ Falhas de validação retornam `400`, conflitos de integridade retornam `409` e 
   "status": 400,
   "error": "VALIDATION_ERROR",
   "message": "Dados da requisição são inválidos.",
-  "path": "/acoes"
+  "path": "/api/acoes"
 }
 ```
 

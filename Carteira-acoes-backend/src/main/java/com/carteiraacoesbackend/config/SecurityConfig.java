@@ -17,6 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,6 +35,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
+@EnableMethodSecurity
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
@@ -84,21 +86,23 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authorize ->
                 authorize
-                    .requestMatchers(HttpMethod.POST, "/api/auth/login", "/usuarios")
+                    .requestMatchers(HttpMethod.POST, "/api/auth/login")
                     .permitAll()
-                    .requestMatchers(HttpMethod.PUT, "/usuarios/*/papel")
+                    .requestMatchers(HttpMethod.POST, "/api/usuarios")
                     .hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/acoes", "/acoes/atualizar-cotacoes")
+                    .requestMatchers(HttpMethod.PUT, "/api/usuarios/*/papel")
                     .hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/acoes/*/cotacao")
+                    .requestMatchers(HttpMethod.POST, "/api/acoes", "/api/acoes/atualizar-cotacoes")
+                    .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/acoes/*/cotacao")
                         .hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/acoes/**")
+                    .requestMatchers(HttpMethod.DELETE, "/api/acoes/**")
                     .hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/corretoras")
+                    .requestMatchers(HttpMethod.POST, "/api/corretoras")
                     .hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/corretoras/**")
+                    .requestMatchers(HttpMethod.DELETE, "/api/corretoras/**")
                     .hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.GET, "/acoes/**", "/corretoras/**")
+                    .requestMatchers(HttpMethod.GET, "/api/acoes/**", "/api/corretoras/**")
                     .permitAll()
                     .requestMatchers(
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/h2-console/**")

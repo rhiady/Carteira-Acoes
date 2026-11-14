@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/operacoes")
+@RequestMapping("/api/operacoes")
 @Tag(name = "Operações")
 public class OperacaoResource {
   private final OperacaoService service;
@@ -147,7 +147,7 @@ public class OperacaoResource {
   private ResponseEntity<OperacaoResponse> criada(OperacaoResponse response) {
     URI uri =
         ServletUriComponentsBuilder.fromCurrentContextPath()
-            .path("/operacoes/{id}")
+            .path("/api/operacoes/{id}")
             .buildAndExpand(response.id())
             .toUri();
     return ResponseEntity.created(uri).body(response);

@@ -14,7 +14,7 @@ public class UsuarioMapper {
     usuario.setNome(login);
     usuario.setEmail(login);
     usuario.setSenha(encodedPassword);
-    usuario.setPapel(com.carteiraacoesbackend.domains.enums.Papel.USER);
+    usuario.setPapel(request.papel());
     usuario.setAtivo(true);
     return usuario;
   }

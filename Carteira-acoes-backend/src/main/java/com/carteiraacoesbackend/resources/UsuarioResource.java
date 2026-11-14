@@ -18,6 +18,7 @@ import java.net.URI;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,7 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Usuários")
 public class UsuarioResource {
 
@@ -62,9 +64,9 @@ public class UsuarioResource {
   }
 
   @GetMapping
-  @Operation(summary = "Lista somente o usuário autenticado")
+  @Operation(summary = "Lista usuários")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Página contendo o usuário autenticado"),
+    @ApiResponse(responseCode = "200", description = "Página contendo os usuários"),
     @ApiResponse(
         responseCode = "400",
         description = "Paginação ou ordenação inválida",
@@ -79,7 +81,7 @@ public class UsuarioResource {
   }
 
   @GetMapping("/{id}")
-  @Operation(summary = "Consulta os dados do próprio usuário")
+  @Operation(summary = "Consulta um usuário")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Usuário encontrado"),
     @ApiResponse(
@@ -96,7 +98,7 @@ public class UsuarioResource {
   }
 
   @PutMapping("/{id}")
-  @Operation(summary = "Atualiza os dados do próprio usuário; senha omitida é preservada")
+  @Operation(summary = "Atualiza username e situação do usuário")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Usuário atualizado"),
     @ApiResponse(
@@ -122,14 +124,14 @@ public class UsuarioResource {
   }
 
   @PutMapping("/{id}/senha")
-  @Operation(summary = "Altera a senha do próprio usuário")
+  @Operation(summary = "Define nova senha do usuário")
   public UsuarioResponse alterarSenha(
       @PathVariable Long id, @Valid @RequestBody AlterarSenhaRequest request) {
     return service.alterarSenha(id, request);
   }
 
   @PutMapping("/{id}/papel")
-  @Operation(summary = "Altera o papel de um usuário; somente administradores")
+  @Operation(summary = "Altera o papel do usuário")
   public UsuarioResponse alterarPapel(
       @PathVariable Long id, @Valid @RequestBody AlterarPapelRequest request) {
     return service.alterarPapel(id, request);
