@@ -207,6 +207,21 @@ class SecurityIntegrationTest {
         .isEqualTo(Papel.ADMIN);
   }
 
+  @Test
+  void commonUserCannotPromoteAnotherUser() throws Exception {
+    criarUsuario("user-promoter@test.com", Papel.USER);
+    criarUsuario("target@test.com", Papel.USER);
+
+    mockMvc
+        .perform(
+            put("/usuarios/{id}/papel", usuarios.findByEmail("target@test.com").orElseThrow().getId())
+                .with(login("user-promoter@test.com"))
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"papel\":\"ADMIN\"}"))
+        .andExpect(status().isForbidden());
+  }
+
   private Usuario criarUsuario(String email, Papel papel) {
     Usuario usuario = new Usuario();
     usuario.setNome(email);
