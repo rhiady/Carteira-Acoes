@@ -45,7 +45,7 @@ class AuthControllerIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"username\":\"ana@email.com\",\"password\":\"senha123\"}"))
+                    .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isString())
             .andExpect(jsonPath("$.tipo").value("Bearer"))
@@ -67,7 +67,7 @@ class AuthControllerIntegrationTest {
     mockMvc
         .perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.username").value("ana@email.com"))
+        .andExpect(jsonPath("$.login").value("ana@email.com"))
         .andExpect(jsonPath("$.authorities").value(org.hamcrest.Matchers.hasItem("ROLE_USER")));
   }
 
@@ -77,7 +77,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"naoexiste@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"naoexiste@email.com\",\"password\":\"senha123\"}"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error").value("CREDENCIAIS_INVALIDAS"));
   }
@@ -90,18 +90,18 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"ana@email.com\",\"password\":\"errada\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"errada\"}"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error").value("CREDENCIAIS_INVALIDAS"));
   }
 
   @Test
-  void rejectsInvalidEmail() throws Exception {
+  void rejectsBlankLogin() throws Exception {
     mockMvc
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"invalido\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"\",\"password\":\"senha123\"}"))
         .andExpect(status().isBadRequest());
   }
 
@@ -111,7 +111,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"ana@email.com\",\"password\":\"\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"\"}"))
         .andExpect(status().isBadRequest());
   }
 
@@ -137,7 +137,7 @@ class AuthControllerIntegrationTest {
   void rejectsTamperedToken() throws Exception {
     criarUsuario();
     String token = login();
-    String tampered = token.substring(0, token.length() - 1) + (token.endsWith("a") ? "b" : "a");
+    String tampered = token + "x";
 
     mockMvc
         .perform(get("/api/auth/me").header("Authorization", "Bearer " + tampered))
@@ -149,7 +149,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"ana@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
         .andExpect(status().isOk())
         .andReturn()
         .getResponse()
@@ -178,7 +178,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/usuarios")
                 .contentType("application/json")
-                .content("{\"nome\":\"Ana\",\"email\":\"ana@email.com\",\"senha\":\"senha123\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
         .andExpect(status().isCreated());
   }
 }

@@ -195,6 +195,23 @@ td:first-child, th:first-child { text-align: left; }
 .mat-mdc-unelevated-button, .mat-mdc-raised-button { --mdc-filled-button-container-color: var(--color-blue); --mdc-filled-button-label-text-color: #fff; }
 .confirm-dialog__message { color: var(--text-secondary); line-height: 1.55; max-width: 58ch; overflow-wrap: anywhere; }
 .confirm-dialog--destructive .mat-mdc-unelevated-button { --mdc-filled-button-container-color: var(--color-danger); --mdc-filled-button-label-text-color: #fff; }
+.portfolio-detail-page { gap: var(--space-8); }
+.portfolio-detail-page .page-heading { align-items: end; }
+.portfolio-summary-metrics { grid-template-columns: minmax(9rem, .7fr) repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.portfolio-summary-metrics .financial-metric { min-height: 8.5rem; }
+.portfolio-summary-metrics .financial-metric--invested { border-top: 2px solid var(--color-blue); }
+.portfolio-summary-metrics .financial-metric--result { border-top: 2px solid var(--color-ink); }
+.portfolio-empty-state { display: grid; gap: var(--space-3); justify-items: start; }
+.portfolio-detail-page .position-card__actions > a[mat-flat-button] { background: var(--color-blue); color: #fff; }
+.portfolio-detail-page .position-card__actions > a[mat-flat-button]:hover { background: var(--color-blue-hover); }
+@media (max-width: 900px) {
+  .portfolio-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .portfolio-detail-page { gap: var(--space-6); }
+  .portfolio-summary-metrics { grid-template-columns: 1fr; }
+  .portfolio-summary-metrics .financial-metric { min-height: 7rem; }
+}
 @media (max-width: 720px) {
   .financial-metric-grid, .operation-summary-grid { gap: var(--space-2); background: transparent; }
   .financial-metric, .operation-summary-grid article { border: 1px solid var(--border-subtle); }

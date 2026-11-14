@@ -2,8 +2,10 @@ package com.carteiraacoesbackend.resources;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -58,7 +60,7 @@ class SecurityIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"email\":\"user@test.com\",\"senha\":\"senha123\"}"))
+                .content("{\"login\":\"user@test.com\",\"password\":\"senha123\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.senha").doesNotExist())
         .andExpect(jsonPath("$.papel").doesNotExist());
@@ -183,18 +185,26 @@ class SecurityIntegrationTest {
   }
 
   @Test
-  void registrationCannotElevateRole() throws Exception {
+  void adminCanPromoteUser() throws Exception {
     mockMvc
         .perform(
             post("/usuarios")
                 .contentType("application/json")
                 .content(
-                    "{\"nome\":\"Ana\",\"email\":\"ana@test.com\",\"senha\":\"senha123\",\"papel\":\"ADMIN\"}"))
+                    "{\"login\":\"ana@test.com\",\"password\":\"senha123\"}"))
         .andExpect(status().isCreated());
 
+    mockMvc
+        .perform(
+            put("/usuarios/{id}/papel", usuarios.findByEmail("ana@test.com").orElseThrow().getId())
+                .with(user("admin").roles("ADMIN"))
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"papel\":\"ADMIN\"}"))
+        .andExpect(status().isOk());
     org.assertj.core.api.Assertions.assertThat(
             usuarios.findByEmail("ana@test.com").orElseThrow().getPapel())
-        .isEqualTo(Papel.USER);
+        .isEqualTo(Papel.ADMIN);
   }
 
   private Usuario criarUsuario(String email, Papel papel) {
@@ -212,7 +222,7 @@ class SecurityIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"email\":\"" + email + "\",\"senha\":\"senha123\"}"))
+                    .content("{\"login\":\"" + email + "\",\"password\":\"senha123\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

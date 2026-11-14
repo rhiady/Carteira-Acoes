@@ -25,6 +25,7 @@ public class UsuarioDetailsService implements UserDetailsService {
 
         return User.withUsername(usuario.getEmail())
                 .password(usuario.getSenha())
+                .disabled(!Boolean.TRUE.equals(usuario.getAtivo()))
                 .roles(usuario.getPapel().name())
                 .build();
     }

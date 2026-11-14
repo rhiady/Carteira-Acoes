@@ -1,6 +1,5 @@
 package com.carteiraacoesbackend.dto;
 
-import java.time.OffsetDateTime;
+import com.carteiraacoesbackend.domains.enums.Papel;
 
-public record UsuarioResponse(
-    Long id, String nome, String email, OffsetDateTime createdAt, OffsetDateTime updatedAt) {}
+public record UsuarioResponse(Long id, String login, Papel papel, Boolean ativo) {}

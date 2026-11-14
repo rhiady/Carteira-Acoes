@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -19,9 +20,9 @@ import { maintenanceError } from '../../core/services/maintenance-error';
 
 @Component({
   selector: 'app-carteira-detail-page',
-  imports: [MatButtonModule, MatMenuModule, MatTooltipModule, RouterLink, ChartPanelComponent, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent],
+  imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, RouterLink, ChartPanelComponent, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent],
   template: `
-    <section>
+    <section class="portfolio-detail-page">
       @if (loading()) { <app-loading-state message="Carregando carteira…" /> }
       @else if (error()) { <app-error-state [message]="error()" (retry)="load()" /><a class="back-link" routerLink="/carteiras">← Voltar para minhas carteiras</a> }
       @else if (summary()) {
@@ -31,14 +32,15 @@ import { maintenanceError } from '../../core/services/maintenance-error';
           <nav class="page-actions" aria-label="Ações da carteira">
             <a mat-flat-button [routerLink]="['/carteiras', id, 'comprar']">Comprar ação</a>
             <a mat-stroked-button [routerLink]="['/carteiras', id, 'vender']">Vender</a>
-            <button mat-stroked-button type="button" [disabled]="refreshing()" (click)="refreshQuotes()">{{ refreshing() ? 'Atualizando…' : '↻ Atualizar cotações' }}</button><button mat-button type="button" [matMenuTriggerFor]="walletActions" aria-label="Mais ações da carteira">Mais ações</button><mat-menu #walletActions="matMenu"><button mat-menu-item type="button" (click)="editWallet()">Editar nome</button><button mat-menu-item type="button" (click)="removeWallet()">Excluir carteira</button></mat-menu>
+            <button mat-stroked-button type="button" [disabled]="refreshing()" (click)="refreshQuotes()"><mat-icon aria-hidden="true">refresh</mat-icon>{{ refreshing() ? 'Atualizando…' : 'Atualizar cotações' }}</button><button mat-button type="button" [matMenuTriggerFor]="walletActions" aria-label="Mais ações da carteira">Mais ações</button><mat-menu #walletActions="matMenu"><button mat-menu-item type="button" (click)="editWallet()">Editar nome</button><button mat-menu-item type="button" (click)="removeWallet()">Excluir carteira</button></mat-menu>
           </nav>
         </div>
 
-        <div class="financial-metric-grid" aria-label="Resumo financeiro por moeda">
-          <article class="financial-metric"><span>Ativos</span><strong>{{ summary()!.quantidadeAtivos }}</strong></article>
+        <div class="financial-metric-grid portfolio-summary-metrics" aria-label="Resumo financeiro por moeda" aria-live="polite">
+          <article class="financial-metric financial-metric--assets"><span>Ativos</span><strong>{{ summary()!.quantidadeAtivos }}</strong><small>posições acompanhadas</small></article>
           @for (subtotal of summary()!.resumosPorMoeda; track subtotal.moeda) {
-            <article class="financial-metric"><span>Valor atual · {{ subtotal.moeda }}</span><strong>{{ money(subtotal.valorAtual, subtotal.moeda) }}</strong></article>
+            <article class="financial-metric financial-metric--invested"><span>Total investido · {{ subtotal.moeda }}</span><strong>{{ money(investedTotal(subtotal.moeda), subtotal.moeda) }}</strong><small>{{ investedDescription(subtotal.moeda) }}</small></article>
+            <article class="financial-metric"><span>Valor atual · {{ subtotal.moeda }}</span><strong>{{ money(subtotal.valorAtual, subtotal.moeda) }}</strong><small>subtotal em {{ subtotal.moeda }}</small></article>
             <article class="financial-metric financial-metric--result"><span>Lucro / Prejuízo · {{ subtotal.moeda }}</span><strong [class]="resultClass(subtotal.lucroPrejuizo)" matTooltip="Resultado calculado com base nas operações desta carteira.">{{ signedMoney(subtotal.lucroPrejuizo, subtotal.moeda) }}</strong><small>{{ resultDescription(subtotal.lucroPrejuizo) }}</small></article>
           }
         </div>
@@ -47,15 +49,15 @@ import { maintenanceError } from '../../core/services/maintenance-error';
           <section class="analytics-currency-group" [attr.aria-label]="'Gráficos em ' + currency">
             <div class="currency-section-heading"><h2>Analytics · {{ currency }}</h2><p>Valores em {{ currency }}. Moedas diferentes não são combinadas.</p></div>
             <div class="chart-grid">
-              <app-chart-panel title="Composição por ação" [chart]="donutChart" [series]="compositionSeries(currency)" [labels]="compositionLabels(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="composition(currency).length > 0" [summary]="compositionSummary(currency)" emptyMessage="Ainda não há posições suficientes para exibir a composição." />
-              <app-chart-panel title="Lucro / prejuízo por ação" [chart]="resultChart" [series]="resultSeries(currency)" [xaxis]="resultAxis(currency)" [plotOptions]="resultPlotOptions" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="results(currency).length > 0" [summary]="resultSummary(currency)" emptyMessage="Ainda não há resultados por ação para exibir." />
-              <app-chart-panel title="Preço médio x cotação" [chart]="comparisonChart" [series]="comparisonSeries(currency)" [xaxis]="comparisonAxis(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="comparisons(currency).length > 0" [summary]="comparisonSummary(currency)" emptyMessage="Ainda não há preço médio e cotação comparáveis." />
+              <app-chart-panel title="Composição por ação · {{ currency }}" [chart]="donutChart" [series]="compositionSeries(currency)" [labels]="compositionLabels(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="composition(currency).length > 0" [summary]="compositionSummary(currency)" emptyMessage="Ainda não há posições suficientes para exibir a composição." />
+              <app-chart-panel title="Lucro / prejuízo por ação · {{ currency }}" [chart]="resultChart" [series]="resultSeries(currency)" [xaxis]="resultAxis(currency)" [plotOptions]="resultPlotOptions" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="results(currency).length > 0" [summary]="resultSummary(currency)" emptyMessage="Ainda não há resultados por ação para exibir." />
+              <app-chart-panel title="Preço médio x cotação · {{ currency }}" [chart]="comparisonChart" [series]="comparisonSeries(currency)" [xaxis]="comparisonAxis(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="comparisons(currency).length > 0" [summary]="comparisonSummary(currency)" emptyMessage="Ainda não há preço médio e cotação comparáveis." />
             </div>
           </section>
         }
 
         <div class="page-heading"><div><h2>Posições ativas</h2><p>Valores oficiais na moeda de cada posição.</p></div><a mat-button [routerLink]="['/carteiras', id, 'operacoes']">Histórico de operações</a></div>
-        @if (!positions()?.content?.length) { <app-empty-state message="Esta carteira ainda não possui posições ativas." /> }
+        @if (!positions()?.content?.length) { <div class="portfolio-empty-state"><app-empty-state message="Esta carteira ainda não possui posições ativas." /><a class="empty-state-action" [routerLink]="['/carteiras', id, 'comprar']">Comprar primeira ação</a></div> }
         @else {
           <div class="position-list">
             @for (item of positions()!.content; track item.acaoId) {
@@ -99,6 +101,21 @@ export class CarteiraDetailPage {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly refreshing = signal(false);
+  protected readonly investedTotals = computed<ReadonlyMap<Moeda, number | null>>(() => {
+    const positions = this.analyticsPositions();
+    const currencies = new Set<Moeda>([
+      ...(this.summary()?.resumosPorMoeda.map((subtotal) => subtotal.moeda) ?? []),
+      ...positions.map((position) => position.moeda),
+    ]);
+
+    return new Map([...currencies].map((currency) => {
+      const currencyPositions = positions.filter((position) => position.moeda === currency);
+      const values = currencyPositions.map((position) => position.valorInvestidoAtual);
+      const complete = values.length > 0 && values.every((value): value is number => typeof value === 'number' && Number.isFinite(value));
+      const total = complete ? values.reduce((sum, value) => sum + value, 0) : null;
+      return [currency, total] as const;
+    }));
+  });
   protected readonly chartCurrencies = computed<Moeda[]>(() => [...new Set([
     ...(this.summary()?.resumosPorMoeda.map((subtotal) => subtotal.moeda) ?? []),
     ...this.analyticsPositions().map((position) => position.moeda),
@@ -145,6 +162,8 @@ export class CarteiraDetailPage {
   protected comparisonSeries(currency: Moeda): ApexAxisChartSeries { const items = this.comparisons(currency); return [{ name: 'Preço médio', data: items.map((item) => item.average) }, { name: 'Cotação atual', data: items.map((item) => item.current) }]; }
   protected comparisonAxis(currency: Moeda): ApexXAxis { return { categories: this.comparisons(currency).map((item) => item.label) }; }
   protected comparisonSummary(currency: Moeda) { return this.comparisons(currency).map((item) => `${item.label}: preço médio ${this.money(item.average, item.moeda)}; cotação atual ${this.money(item.current, item.moeda)}`); }
+  protected investedTotal(currency: Moeda) { return this.investedTotals().get(currency) ?? null; }
+  protected investedDescription(currency: Moeda) { return this.analyticsLoading() ? 'Carregando posições completas…' : this.investedTotal(currency) === null ? 'total indisponível' : `soma das posições em ${currency}`; }
 
   private loadSummary() {
     this.service.summary(this.id).subscribe({
@@ -158,7 +177,7 @@ export class CarteiraDetailPage {
     this.refreshing.set(true);
     this.acaoService.updateAllQuotes().subscribe({
       next: (result) => { this.feedback[result.atualizadas === 0 || result.falhas > 0 ? 'error' : 'success'](this.refreshOutcome(result)); this.load(); },
-      error: () => this.feedback.error('Não foi possível atualizar as cotações.'),
+      error: (httpError: { message?: string }) => { this.feedback.error(httpError.message ?? 'Não foi possível atualizar as cotações.'); this.refreshing.set(false); },
       complete: () => this.refreshing.set(false),
     });
   }

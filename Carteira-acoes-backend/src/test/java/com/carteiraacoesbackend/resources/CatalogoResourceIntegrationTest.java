@@ -64,9 +64,11 @@ class CatalogoResourceIntegrationTest {
         .perform(
             post("/usuarios")
                 .contentType("application/json")
-                .content("{\"nome\":\"Ana\",\"email\":\"ana@teste.com\",\"senha\":\"segredo\"}"))
+                .content("{\"login\":\"ana@teste.com\",\"password\":\"segredo123\"}"))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.email").value("ana@teste.com"))
+        .andExpect(jsonPath("$.login").value("ana@teste.com"))
+        .andExpect(jsonPath("$.papel").value("USER"))
+        .andExpect(jsonPath("$.ativo").value(true))
         .andExpect(jsonPath("$.senha").doesNotExist());
   }
 
@@ -76,7 +78,7 @@ class CatalogoResourceIntegrationTest {
         .perform(
             post("/usuarios")
                 .contentType("application/json")
-                .content("{\"nome\":\"Ana\",\"email\":"))
+                .content("{\"login\":\"ana@teste.com\",\"password\":"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.error").value("INVALID_REQUEST_FORMAT"))
@@ -152,12 +154,12 @@ class CatalogoResourceIntegrationTest {
                 post("/usuarios")
                     .contentType("application/json")
                     .content(
-                        "{\"nome\":\"Ana\",\"email\":\"ana-update@teste.com\",\"senha\":\"segredo\"}"))
+                        "{\"login\":\"ana-update@teste.com\",\"password\":\"segredo123\"}"))
             .andReturn()
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    RequestPostProcessor session = login("ana-update@teste.com", "segredo");
+    RequestPostProcessor session = login("ana-update@teste.com", "segredo123");
     String senhaAnterior = usuarios.findById(id).orElseThrow().getSenha();
 
     mockMvc
@@ -166,10 +168,9 @@ class CatalogoResourceIntegrationTest {
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
-                .content("{\"nome\":\"Ana Atualizada\",\"email\":\"ana-nova@teste.com\"}"))
+                .content("{\"login\":\"ana-nova@teste.com\",\"ativo\":true}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.nome").value("Ana Atualizada"))
-        .andExpect(jsonPath("$.email").value("ana-nova@teste.com"))
+        .andExpect(jsonPath("$.login").value("ana-nova@teste.com"))
         .andExpect(jsonPath("$.senha").doesNotExist());
     String senha = usuarios.findById(id).orElseThrow().getSenha();
     org.junit.jupiter.api.Assertions.assertEquals(senhaAnterior, senha);
@@ -183,7 +184,7 @@ class CatalogoResourceIntegrationTest {
                 post("/usuarios")
                     .contentType("application/json")
                     .content(
-                        "{\"nome\":\"Bia\",\"email\":\"bia-update@teste.com\",\"senha\":\"senha-antiga\"}"))
+                        "{\"login\":\"bia-update@teste.com\",\"password\":\"senha-antiga\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -198,7 +199,7 @@ class CatalogoResourceIntegrationTest {
                 .with(csrf())
                 .contentType("application/json")
                 .content(
-                    "{\"nome\":\"Bia\",\"email\":\"bia-update@teste.com\",\"senha\":\"senha-nova\"}"))
+                    "{\"login\":\"bia-update@teste.com\",\"ativo\":true,\"password\":\"senha-nova\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.senha").doesNotExist());
 
@@ -206,7 +207,22 @@ class CatalogoResourceIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"email\":\"bia-update@teste.com\",\"senha\":\"senha-antiga\"}"))
+                .content("{\"login\":\"bia-update@teste.com\",\"password\":\"senha-antiga\"}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            put("/usuarios/{id}/senha", id)
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"password\":\"senha-nova\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.password").doesNotExist());
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType("application/json")
+                .content("{\"login\":\"bia-update@teste.com\",\"password\":\"senha-antiga\"}"))
         .andExpect(status().isUnauthorized());
     login("bia-update@teste.com", "senha-nova");
     org.junit.jupiter.api.Assertions.assertNotEquals(
@@ -220,7 +236,7 @@ class CatalogoResourceIntegrationTest {
             post("/usuarios")
                 .contentType("application/json")
                 .content(
-                    "{\"nome\":\"Um\",\"email\":\"um-update@teste.com\",\"senha\":\"segredo\"}"))
+                    "{\"login\":\"um-update@teste.com\",\"password\":\"segredo123\"}"))
         .andExpect(status().isCreated());
     String response =
         mockMvc
@@ -228,12 +244,12 @@ class CatalogoResourceIntegrationTest {
                 post("/usuarios")
                     .contentType("application/json")
                     .content(
-                        "{\"nome\":\"Dois\",\"email\":\"dois-update@teste.com\",\"senha\":\"segredo\"}"))
+                        "{\"login\":\"dois-update@teste.com\",\"password\":\"segredo123\"}"))
             .andReturn()
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    RequestPostProcessor session = login("dois-update@teste.com", "segredo");
+    RequestPostProcessor session = login("dois-update@teste.com", "segredo123");
 
     mockMvc
         .perform(
@@ -241,7 +257,7 @@ class CatalogoResourceIntegrationTest {
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
-                .content("{\"nome\":\"Dois\",\"email\":\"um-update@teste.com\"}"))
+                .content("{\"login\":\"um-update@teste.com\",\"ativo\":true}"))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.error").value("EMAIL_DUPLICADO"));
   }
@@ -259,7 +275,7 @@ class CatalogoResourceIntegrationTest {
 
   @Test
   void rejectsDuplicateEmailAndReturnsStandardError() throws Exception {
-    String body = "{\"nome\":\"Bruno\",\"email\":\"bruno@teste.com\",\"senha\":\"segredo\"}";
+    String body = "{\"login\":\"bruno@teste.com\",\"password\":\"segredo123\"}";
     mockMvc
         .perform(post("/usuarios").contentType("application/json").content(body))
         .andExpect(status().isCreated());
@@ -277,14 +293,14 @@ class CatalogoResourceIntegrationTest {
                 post("/usuarios")
                     .contentType("application/json")
                     .content(
-                        "{\"nome\":\"Carla\",\"email\":\"carla@teste.com\",\"senha\":\"segredo\"}"))
+                        "{\"login\":\"carla@teste.com\",\"password\":\"segredo123\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
             .getContentAsString();
     long userId = Long.parseLong(userResponse.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
     long corretoraId = criarCorretora().getId();
-    RequestPostProcessor session = login("carla@teste.com", "segredo");
+    RequestPostProcessor session = login("carla@teste.com", "segredo123");
 
     mockMvc
         .perform(
@@ -315,13 +331,13 @@ class CatalogoResourceIntegrationTest {
                 post("/usuarios")
                     .contentType("application/json")
                     .content(
-                        "{\"nome\":\"Davi\",\"email\":\"davi@teste.com\",\"senha\":\"segredo\"}"))
+                        "{\"login\":\"davi@teste.com\",\"password\":\"segredo123\"}"))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
             .getContentAsString();
     long userId = Long.parseLong(userResponse.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    RequestPostProcessor session = login("davi@teste.com", "segredo");
+    RequestPostProcessor session = login("davi@teste.com", "segredo123");
 
     mockMvc
         .perform(
@@ -424,7 +440,7 @@ class CatalogoResourceIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"email\":\"" + email + "\",\"senha\":\"" + senha + "\"}"))
+                    .content("{\"login\":\"" + email + "\",\"password\":\"" + senha + "\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

@@ -106,7 +106,7 @@ class OperacaoResourcePersistenceIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"email\":\"" + email + "\",\"senha\":\"senha\"}"))
+                    .content("{\"login\":\"" + email + "\",\"password\":\"senha\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

@@ -41,7 +41,7 @@ public class AuthService {
       authentication =
           authenticationManager.authenticate(
               UsernamePasswordAuthenticationToken.unauthenticated(
-                  request.username().trim().toLowerCase(), request.password()));
+                  request.login().trim().toLowerCase(), request.password()));
     } catch (org.springframework.security.core.AuthenticationException exception) {
       throw ApiException.unauthorized("CREDENCIAIS_INVALIDAS", INVALID_CREDENTIALS_MESSAGE);
     }

@@ -35,6 +35,9 @@ public class Usuario extends AuditableEntity {
   @Column(nullable = false, length = 20)
   private Papel papel = Papel.USER;
 
+  @Column(nullable = false)
+  private Boolean ativo = true;
+
   @Setter(AccessLevel.NONE)
   @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Carteira> carteiras = new ArrayList<>();

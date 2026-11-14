@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import axe from 'axe-core';
 import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AcaoService } from '../../core/services/acao.service';
@@ -15,9 +16,9 @@ describe('CarteiraDetailPage', () => {
     summary: vi.fn(() => of({ carteiraId: 7, nome: 'Longo prazo', quantidadeAtivos: 2, resumosPorMoeda: [{ moeda: 'BRL', valorAtual: 10, lucroPrejuizo: 2 }, { moeda: 'USD', valorAtual: 10, lucroPrejuizo: -1 }] })),
     positions: vi.fn(() => of({ content: [], totalElements: 0, totalPages: 0, size: 10, number: 0, first: true, last: true, numberOfElements: 0, empty: true } as Page<PosicaoAcao>)),
     allPositions: vi.fn(() => of([
-      { carteiraId: 7, acaoId: 1, ticker: 'PETR4', nomeEmpresa: 'Petrobras', mercado: 'BRASIL', moeda: 'BRL', quantidade: 1, cotacaoAtual: 10, dataHoraCotacao: '2026-09-03T00:00:00Z', valorAtual: 10, precoMedio: 8, precoMedioVenda: null, lucroPrejuizoRealizado: null, lucroPrejuizoNaoRealizado: 2, lucroPrejuizo: 2 },
-      { carteiraId: 7, acaoId: 2, ticker: 'AAPL', nomeEmpresa: 'Apple', mercado: 'EUA', moeda: 'USD', quantidade: 1, cotacaoAtual: 10, dataHoraCotacao: '2026-09-03T00:00:00Z', valorAtual: 10, precoMedio: 12, precoMedioVenda: null, lucroPrejuizoRealizado: null, lucroPrejuizoNaoRealizado: -1, lucroPrejuizo: -1 },
-    ])),
+      { carteiraId: 7, acaoId: 1, ticker: 'PETR4', nomeEmpresa: 'Petrobras', mercado: 'BRASIL', moeda: 'BRL', quantidade: 1, cotacaoAtual: 10, dataHoraCotacao: '2026-09-03T00:00:00Z', valorAtual: 10, precoMedio: 8, valorInvestidoAtual: 8, precoMedioVenda: null, lucroPrejuizoRealizado: null, lucroPrejuizoNaoRealizado: 2, lucroPrejuizo: 2 },
+      { carteiraId: 7, acaoId: 2, ticker: 'AAPL', nomeEmpresa: 'Apple', mercado: 'EUA', moeda: 'USD', quantidade: 1, cotacaoAtual: 10, dataHoraCotacao: '2026-09-03T00:00:00Z', valorAtual: 10, precoMedio: 12, valorInvestidoAtual: 12, precoMedioVenda: null, lucroPrejuizoRealizado: null, lucroPrejuizoNaoRealizado: -1, lucroPrejuizo: -1 },
+    ] as PosicaoAcao[])),
   };
   const acaoService = { updateAllQuotes: vi.fn(() => refresh) };
 
@@ -74,5 +75,47 @@ describe('CarteiraDetailPage', () => {
     expect(text).toContain('R$ 525,00');
     expect(text).toContain('R$ 225,00');
     expect(text).toContain('+ R$ 50,00');
+  });
+
+  it('renders complete invested totals independently for each currency', () => {
+    const fixture = TestBed.createComponent(CarteiraDetailPage);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent.replace(/\u00a0/g, ' ');
+    expect(text).toContain('Total investido · BRL');
+    expect(text).toContain('R$ 8,00');
+    expect(text).toContain('Total investido · USD');
+    expect(text).toContain('US$ 12,00');
+    expect(text).not.toContain('R$ 20,00');
+  });
+
+  it('keeps invested totals unavailable when a currency has incomplete data', () => {
+    carteiraService.allPositions.mockReturnValueOnce(of([
+      { carteiraId: 7, acaoId: 1, ticker: 'PETR4', nomeEmpresa: 'Petrobras', mercado: 'BRASIL', moeda: 'BRL', quantidade: 1, cotacaoAtual: 10, dataHoraCotacao: '2026-09-03T00:00:00Z', valorAtual: 10, precoMedio: 8, valorInvestidoAtual: null, precoMedioVenda: null, lucroPrejuizoRealizado: null, lucroPrejuizoNaoRealizado: 2, lucroPrejuizo: 2 },
+    ] as PosicaoAcao[]));
+    const fixture = TestBed.createComponent(CarteiraDetailPage);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent.replace(/\u00a0/g, ' ');
+    expect(text).toContain('Total investido · BRL');
+    expect(text).toContain('total indisponível');
+    expect(text).toContain('—');
+  });
+
+  it('offers the first purchase action when the portfolio has no positions', () => {
+    const fixture = TestBed.createComponent(CarteiraDetailPage);
+    fixture.detectChanges();
+
+    const action = fixture.nativeElement.querySelector('.portfolio-empty-state a') as HTMLAnchorElement;
+    expect(action.textContent).toContain('Comprar primeira ação');
+    expect(action.getAttribute('href')).toBe('/carteiras/7/comprar');
+  });
+
+  it('has no automated accessibility violations in the detail shell', async () => {
+    const fixture = TestBed.createComponent(CarteiraDetailPage);
+    fixture.detectChanges();
+
+    const results = await axe.run(fixture.nativeElement as HTMLElement, { rules: { 'color-contrast': { enabled: false } } });
+    expect(results.violations).toEqual([]);
   });
 });

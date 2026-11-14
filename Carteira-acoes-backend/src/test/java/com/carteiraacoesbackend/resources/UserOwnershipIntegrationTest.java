@@ -156,7 +156,7 @@ class UserOwnershipIntegrationTest {
                 .with(csrf())
                 .contentType("application/json")
                 .content(
-                    "{\"nome\":\"Invadido\",\"email\":\"invadido@test.com\",\"senha\":\"nova\"}"))
+                    "{\"login\":\"invadido@test.com\",\"ativo\":true}"))
         .andExpect(status().isNotFound());
 
     assertThat(usuarios.findById(joao.getId()).orElseThrow().getEmail())
@@ -224,7 +224,7 @@ class UserOwnershipIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"email\":\"" + email + "\",\"senha\":\"senha123\"}"))
+                    .content("{\"login\":\"" + email + "\",\"password\":\"senha123\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

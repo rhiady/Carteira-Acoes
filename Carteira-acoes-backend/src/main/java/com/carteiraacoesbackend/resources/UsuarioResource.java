@@ -1,7 +1,9 @@
 package com.carteiraacoesbackend.resources;
 
 import com.carteiraacoesbackend.dto.ErroResponse;
-import com.carteiraacoesbackend.dto.UsuarioRequest;
+import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
+import com.carteiraacoesbackend.dto.AlterarPapelRequest;
+import com.carteiraacoesbackend.dto.UsuarioCreateRequest;
 import com.carteiraacoesbackend.dto.UsuarioResponse;
 import com.carteiraacoesbackend.dto.UsuarioUpdateRequest;
 import com.carteiraacoesbackend.services.UsuarioService;
@@ -49,7 +51,7 @@ public class UsuarioResource {
         description = "Email já cadastrado",
         content = @Content(schema = @Schema(implementation = ErroResponse.class)))
   })
-  public ResponseEntity<UsuarioResponse> criar(@Valid @RequestBody UsuarioRequest request) {
+  public ResponseEntity<UsuarioResponse> criar(@Valid @RequestBody UsuarioCreateRequest request) {
     UsuarioResponse response = service.criar(request);
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest()
@@ -117,5 +119,19 @@ public class UsuarioResource {
   public UsuarioResponse atualizar(
       @PathVariable Long id, @Valid @RequestBody UsuarioUpdateRequest request) {
     return service.atualizar(id, request);
+  }
+
+  @PutMapping("/{id}/senha")
+  @Operation(summary = "Altera a senha do próprio usuário")
+  public UsuarioResponse alterarSenha(
+      @PathVariable Long id, @Valid @RequestBody AlterarSenhaRequest request) {
+    return service.alterarSenha(id, request);
+  }
+
+  @PutMapping("/{id}/papel")
+  @Operation(summary = "Altera o papel de um usuário; somente administradores")
+  public UsuarioResponse alterarPapel(
+      @PathVariable Long id, @Valid @RequestBody AlterarPapelRequest request) {
+    return service.alterarPapel(id, request);
   }
 }

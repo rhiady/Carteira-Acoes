@@ -1,7 +1,9 @@
 package com.carteiraacoesbackend.services;
 
 import com.carteiraacoesbackend.domains.Usuario;
-import com.carteiraacoesbackend.dto.UsuarioRequest;
+import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
+import com.carteiraacoesbackend.dto.AlterarPapelRequest;
+import com.carteiraacoesbackend.dto.UsuarioCreateRequest;
 import com.carteiraacoesbackend.dto.UsuarioResponse;
 import com.carteiraacoesbackend.dto.UsuarioUpdateRequest;
 import com.carteiraacoesbackend.exceptions.ApiException;
@@ -52,15 +54,12 @@ public class UsuarioService {
   }
 
   @Transactional
-  public UsuarioResponse criar(UsuarioRequest request) {
-    String email = request.email().trim().toLowerCase();
-    if (repository.existsByEmail(email)) {
+  public UsuarioResponse criar(UsuarioCreateRequest request) {
+    String login = request.login().trim().toLowerCase();
+    if (repository.existsByEmail(login)) {
       throw ApiException.conflict("EMAIL_DUPLICADO", "Já existe um usuário com este e-mail.");
     }
-    Usuario usuario =
-        mapper.toEntity(
-            new UsuarioRequest(
-                request.nome().trim(), email, passwordEncoder.encode(request.senha())));
+    Usuario usuario = mapper.toEntity(request, passwordEncoder.encode(request.password()));
     return mapper.toResponse(repository.save(usuario));
   }
 
@@ -73,15 +72,31 @@ public class UsuarioService {
   public UsuarioResponse atualizar(Long id, UsuarioUpdateRequest request) {
     requireSelfIfWebRequest(id);
     Usuario usuario = obterEntidade(id);
-    String email = request.email().trim().toLowerCase();
-    if (repository.existsByEmailAndIdNot(email, id)) {
+    String login = request.login().trim().toLowerCase();
+    if (repository.existsByEmailAndIdNot(login, id)) {
       throw ApiException.conflict("EMAIL_DUPLICADO", "Já existe um usuário com este e-mail.");
     }
-    usuario.setNome(request.nome().trim());
-    usuario.setEmail(email);
-    if (request.senha() != null && !request.senha().isBlank()) {
-      usuario.setSenha(passwordEncoder.encode(request.senha()));
+    usuario.setNome(login);
+    usuario.setEmail(login);
+    usuario.setAtivo(request.ativo());
+    return mapper.toResponse(repository.save(usuario));
+  }
+
+  @Transactional
+  public UsuarioResponse alterarSenha(Long id, AlterarSenhaRequest request) {
+    requireSelfIfWebRequest(id);
+    Usuario usuario = obterEntidade(id);
+    usuario.setSenha(passwordEncoder.encode(request.password()));
+    return mapper.toResponse(repository.save(usuario));
+  }
+
+  @Transactional
+  public UsuarioResponse alterarPapel(Long id, AlterarPapelRequest request) {
+    if (!isAdmin()) {
+      throw ApiException.forbidden("PAPEL_NAO_PERMITIDO", "Somente administradores podem alterar o papel.");
     }
+    Usuario usuario = obterEntidade(id);
+    usuario.setPapel(request.papel());
     return mapper.toResponse(repository.save(usuario));
   }
 
@@ -101,6 +116,12 @@ public class UsuarioService {
     if (currentUser != null && currentUser.isWebRequest()) {
       currentUser.requireUserId(id);
     }
+  }
+
+  private boolean isAdmin() {
+    var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+    return authentication != null && authentication.getAuthorities().stream()
+        .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
   }
 
   public Usuario obterEntidade(Long id) {
