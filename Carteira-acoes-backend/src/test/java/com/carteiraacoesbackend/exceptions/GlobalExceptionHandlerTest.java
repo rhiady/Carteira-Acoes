@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.access.AccessDeniedException;
 
 class GlobalExceptionHandlerTest {
 
@@ -41,5 +42,20 @@ class GlobalExceptionHandlerTest {
     assertThat(body.error()).isEqualTo("CONCURRENT_MODIFICATION");
     assertThat(body.message()).doesNotContain("persistence");
     assertThat(body.path()).isEqualTo("/api/operacoes/vendas");
+  }
+
+  @Test
+  void keepsApplicationAccessDeniedHandlingSeparateFromSecurityFilters() {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/usuarios");
+    var response =
+        new GlobalExceptionHandler()
+            .handleAccessDenied(new AccessDeniedException("internal permission detail"), request);
+
+    ErroResponse body = response.getBody();
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(body).isNotNull();
+    assertThat(body.error()).isEqualTo("FORBIDDEN");
+    assertThat(body.message()).isEqualTo("Acesso negado.");
+    assertThat(body.path()).isEqualTo("/api/usuarios");
   }
 }

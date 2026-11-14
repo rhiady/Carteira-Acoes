@@ -1,12 +1,9 @@
 package com.carteiraacoesbackend.config;
 
-import com.carteiraacoesbackend.dto.ErroResponse;
+import com.carteiraacoesbackend.security.RestAccessDeniedHandler;
+import com.carteiraacoesbackend.security.RestAuthenticationEntryPoint;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -14,7 +11,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -32,7 +28,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
-import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
 @EnableMethodSecurity
@@ -78,7 +73,10 @@ public class SecurityConfig {
 
   @Bean
   SecurityFilterChain securityFilterChain(
-      HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter, JsonMapper objectMapper)
+      HttpSecurity http,
+      JwtAuthenticationConverter jwtAuthenticationConverter,
+      RestAuthenticationEntryPoint authenticationEntryPoint,
+      RestAccessDeniedHandler accessDeniedHandler)
       throws Exception {
     http.csrf(csrf -> csrf.disable())
         .cors(cors -> {})
@@ -114,43 +112,12 @@ public class SecurityConfig {
         .exceptionHandling(
             exceptions ->
                 exceptions
-                    .authenticationEntryPoint(
-                        (request, response, exception) ->
-                            writeError(
-                                objectMapper,
-                                response,
-                                401,
-                                "UNAUTHORIZED",
-                                "Usuário não autenticado.",
-                                request.getRequestURI()))
-                    .accessDeniedHandler(
-                        (request, response, exception) ->
-                            writeError(
-                                objectMapper,
-                                response,
-                                403,
-                                "FORBIDDEN",
-                                "Acesso negado.",
-                                request.getRequestURI())))
+                    .authenticationEntryPoint(authenticationEntryPoint)
+                    .accessDeniedHandler(accessDeniedHandler))
         .oauth2ResourceServer(
             oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
         .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
     return http.build();
-  }
-
-  private void writeError(
-      JsonMapper objectMapper,
-      HttpServletResponse response,
-      int status,
-      String error,
-      String message,
-      String path)
-      throws IOException {
-    response.setStatus(status);
-    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-    objectMapper.writeValue(
-        response.getWriter(),
-        new ErroResponse(OffsetDateTime.now(ZoneOffset.UTC), status, error, message, path));
   }
 
   @Bean

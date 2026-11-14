@@ -26,6 +26,18 @@ O sistema MUST permitir sem autenticação somente o cadastro de usuário, o log
 - **WHEN** um endpoint existente é chamado nas condições previamente suportadas e com a autenticação exigida por sua nova proteção
 - **THEN** seu comportamento funcional MUST permanecer compatível com o comportamento anterior
 
+#### Scenario: Endpoint protegido com token válido
+- **WHEN** um endpoint protegido recebe um token JWT válido
+- **THEN** o sistema MUST autenticar a requisição usando a identidade e as authorities do token
+
+#### Scenario: Endpoint protegido sem token
+- **WHEN** um endpoint protegido é chamado sem token ou com token inválido
+- **THEN** o sistema MUST responder `401 Unauthorized` sem executar a operação
+
+#### Scenario: Login de usuário desativado
+- **WHEN** uma identidade com `ativo=false` tenta autenticar
+- **THEN** o sistema MUST rejeitar o login e MUST emitir nenhum token
+
 ## ADDED Requirements
 
 ### Requirement: Autorização baseada em papel
