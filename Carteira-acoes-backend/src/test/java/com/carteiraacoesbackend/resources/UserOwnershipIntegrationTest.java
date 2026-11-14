@@ -26,10 +26,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureMockMvc
@@ -59,29 +59,29 @@ class UserOwnershipIntegrationTest {
     Corretora corretora = corretora("11111111000111");
     Carteira carteiraAna = carteira("Ana", ana, corretora);
     Carteira carteiraJoao = carteira("Joao", joao, corretora);
-    MockHttpSession session = login("ana@test.com");
+    RequestPostProcessor session = login("ana@test.com");
 
     mockMvc
-        .perform(get("/carteiras/{id}", carteiraAna.getId()).session(session))
+        .perform(get("/carteiras/{id}", carteiraAna.getId()).with(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.nome").value("Ana"));
     mockMvc
-        .perform(get("/carteiras/{id}", carteiraJoao.getId()).session(session))
+        .perform(get("/carteiras/{id}", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/carteiras/{id}/acoes", carteiraJoao.getId()).session(session))
+        .perform(get("/carteiras/{id}/acoes", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/carteiras/{id}/resumo", carteiraJoao.getId()).session(session))
+        .perform(get("/carteiras/{id}/resumo", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/operacoes/carteiras/{id}", carteiraJoao.getId()).session(session))
+        .perform(get("/operacoes/carteiras/{id}", carteiraJoao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/usuarios/{id}/carteiras", joao.getId()).session(session))
+        .perform(get("/usuarios/{id}/carteiras", joao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/carteiras").session(session))
+        .perform(get("/carteiras").with(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].nome").value("Ana"));
@@ -105,7 +105,7 @@ class UserOwnershipIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/compras")
-                .session(login("ana-buy@test.com"))
+                .with(login("ana-buy@test.com"))
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -119,7 +119,7 @@ class UserOwnershipIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/vendas")
-                .session(login("ana-buy@test.com"))
+                .with(login("ana-buy@test.com"))
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -136,23 +136,23 @@ class UserOwnershipIntegrationTest {
   void userRoutesRequireAuthenticationAndHideOtherUsers() throws Exception {
     Usuario ana = usuario("ana-profile@test.com");
     Usuario joao = usuario("joao-profile@test.com");
-    MockHttpSession session = login("ana-profile@test.com");
+    RequestPostProcessor session = login("ana-profile@test.com");
 
     mockMvc.perform(get("/usuarios")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/usuarios/{id}", ana.getId())).andExpect(status().isUnauthorized());
     mockMvc
-        .perform(get("/usuarios").session(session))
+        .perform(get("/usuarios").with(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(1))
         .andExpect(jsonPath("$.content[0].id").value(ana.getId()))
         .andExpect(jsonPath("$.content[0].senha").doesNotExist());
     mockMvc
-        .perform(get("/usuarios/{id}", joao.getId()).session(session))
+        .perform(get("/usuarios/{id}", joao.getId()).with(session))
         .andExpect(status().isNotFound());
     mockMvc
         .perform(
             put("/usuarios/{id}", joao.getId())
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -173,7 +173,7 @@ class UserOwnershipIntegrationTest {
         mockMvc
             .perform(
                 post("/carteiras")
-                    .session(login("ana-create@test.com"))
+                    .with(login("ana-create@test.com"))
                     .with(csrf())
                     .contentType("application/json")
                     .content(
@@ -218,16 +218,21 @@ class UserOwnershipIntegrationTest {
     return corretoras.save(corretora);
   }
 
-  private MockHttpSession login(String email) throws Exception {
-    return (MockHttpSession)
+  private RequestPostProcessor login(String email) throws Exception {
+    String response =
         mockMvc
             .perform(
-                post("/auth/login")
+                post("/api/auth/login")
                     .contentType("application/json")
                     .content("{\"email\":\"" + email + "\",\"senha\":\"senha123\"}"))
             .andExpect(status().isOk())
             .andReturn()
-            .getRequest()
-            .getSession();
+            .getResponse()
+            .getContentAsString();
+    String token = response.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+    return request -> {
+      request.addHeader("Authorization", "Bearer " + token);
+      return request;
+    };
   }
 }

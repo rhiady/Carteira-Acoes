@@ -18,11 +18,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureMockMvc
@@ -45,7 +45,7 @@ class SecurityIntegrationTest {
 
     mockMvc
         .perform(
-            post("/auth/login")
+            post("/api/auth/login")
                 .contentType("application/json")
                 .content("{\"email\":\"user@test.com\",\"senha\":\"senha123\"}"))
         .andExpect(status().isOk())
@@ -56,12 +56,12 @@ class SecurityIntegrationTest {
   @Test
   void userCannotUseAdministrativeActionEndpoint() throws Exception {
     criarUsuario("user@test.com", Papel.USER);
-    MockHttpSession session = login("user@test.com");
+    RequestPostProcessor session = login("user@test.com");
 
     mockMvc
         .perform(
             post("/acoes")
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content("{\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\"}"))
@@ -78,7 +78,7 @@ class SecurityIntegrationTest {
     mockMvc
         .perform(
             post("/acoes")
-                .session(login("admin@test.com"))
+                .with(login("admin@test.com"))
                 .with(csrf())
                 .contentType("application/json")
                 .content("{\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\"}"))
@@ -109,16 +109,21 @@ class SecurityIntegrationTest {
     return usuarios.save(usuario);
   }
 
-  private MockHttpSession login(String email) throws Exception {
-    return (MockHttpSession)
+  private RequestPostProcessor login(String email) throws Exception {
+    String response =
         mockMvc
             .perform(
-                post("/auth/login")
+                post("/api/auth/login")
                     .contentType("application/json")
                     .content("{\"email\":\"" + email + "\",\"senha\":\"senha123\"}"))
             .andExpect(status().isOk())
             .andReturn()
-            .getRequest()
-            .getSession();
+            .getResponse()
+            .getContentAsString();
+    String token = response.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+    return request -> {
+      request.addHeader("Authorization", "Bearer " + token);
+      return request;
+    };
   }
 }

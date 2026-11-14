@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -157,13 +157,13 @@ class CatalogoResourceIntegrationTest {
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    MockHttpSession session = login("ana-update@teste.com", "segredo");
+    RequestPostProcessor session = login("ana-update@teste.com", "segredo");
     String senhaAnterior = usuarios.findById(id).orElseThrow().getSenha();
 
     mockMvc
         .perform(
             put("/usuarios/{id}", id)
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content("{\"nome\":\"Ana Atualizada\",\"email\":\"ana-nova@teste.com\"}"))
@@ -189,12 +189,12 @@ class CatalogoResourceIntegrationTest {
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    MockHttpSession session = login("bia-update@teste.com", "senha-antiga");
+    RequestPostProcessor session = login("bia-update@teste.com", "senha-antiga");
 
     mockMvc
         .perform(
             put("/usuarios/{id}", id)
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -204,7 +204,7 @@ class CatalogoResourceIntegrationTest {
 
     mockMvc
         .perform(
-            post("/auth/login")
+            post("/api/auth/login")
                 .contentType("application/json")
                 .content("{\"email\":\"bia-update@teste.com\",\"senha\":\"senha-antiga\"}"))
         .andExpect(status().isUnauthorized());
@@ -233,12 +233,12 @@ class CatalogoResourceIntegrationTest {
             .getResponse()
             .getContentAsString();
     long id = Long.parseLong(response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    MockHttpSession session = login("dois-update@teste.com", "segredo");
+    RequestPostProcessor session = login("dois-update@teste.com", "segredo");
 
     mockMvc
         .perform(
             put("/usuarios/{id}", id)
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content("{\"nome\":\"Dois\",\"email\":\"um-update@teste.com\"}"))
@@ -253,8 +253,8 @@ class CatalogoResourceIntegrationTest {
             put("/usuarios/{id}", 999999L)
                 .contentType("application/json")
                 .content("{\"nome\":\"\",\"email\":\"invalido\"}"))
-        .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
   }
 
   @Test
@@ -284,12 +284,12 @@ class CatalogoResourceIntegrationTest {
             .getContentAsString();
     long userId = Long.parseLong(userResponse.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
     long corretoraId = criarCorretora().getId();
-    MockHttpSession session = login("carla@teste.com", "segredo");
+    RequestPostProcessor session = login("carla@teste.com", "segredo");
 
     mockMvc
         .perform(
             post("/carteiras")
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -301,7 +301,7 @@ class CatalogoResourceIntegrationTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.corretoraId").value(corretoraId));
     mockMvc
-        .perform(get("/usuarios/{id}/carteiras?page=0&size=20", userId).session(session))
+        .perform(get("/usuarios/{id}/carteiras?page=0&size=20", userId).with(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].nome").value("Longo Prazo"))
         .andExpect(jsonPath("$.content[0].corretoraId").value(corretoraId));
@@ -321,12 +321,12 @@ class CatalogoResourceIntegrationTest {
             .getResponse()
             .getContentAsString();
     long userId = Long.parseLong(userResponse.replaceAll(".*\\\"id\\\":(\\d+).*", "$1"));
-    MockHttpSession session = login("davi@teste.com", "segredo");
+    RequestPostProcessor session = login("davi@teste.com", "segredo");
 
     mockMvc
         .perform(
             post("/carteiras")
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content("{\"nome\":\"Sem corretora\",\"usuarioId\":" + userId + "}"))
@@ -335,7 +335,7 @@ class CatalogoResourceIntegrationTest {
     mockMvc
         .perform(
             post("/carteiras")
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -398,37 +398,42 @@ class CatalogoResourceIntegrationTest {
             post("/operacoes/compras")
                 .contentType("application/json")
                 .content("{\"carteiraId\":1,\"quantidade\":1,\"precoUnitario\":10}"))
-        .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     mockMvc
         .perform(
             post("/operacoes/compras")
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":1,\"acaoId\":1,\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\",\"quantidade\":1,\"precoUnitario\":10}"))
-        .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     mockMvc
         .perform(
             post("/operacoes/compras")
                 .contentType("application/json")
                 .content(
                     "{\"carteiraId\":1,\"ticker\":\"PETR4\",\"quantidade\":1,\"precoUnitario\":10}"))
-        .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
   }
 
-  private MockHttpSession login(String email, String senha) throws Exception {
-    return (MockHttpSession)
+  private RequestPostProcessor login(String email, String senha) throws Exception {
+    String response =
         mockMvc
             .perform(
-                post("/auth/login")
+                post("/api/auth/login")
                     .contentType("application/json")
                     .content("{\"email\":\"" + email + "\",\"senha\":\"" + senha + "\"}"))
             .andExpect(status().isOk())
             .andReturn()
-            .getRequest()
-            .getSession();
+            .getResponse()
+            .getContentAsString();
+    String token = response.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+    return request -> {
+      request.addHeader("Authorization", "Bearer " + token);
+      return request;
+    };
   }
 
   private Corretora criarCorretora() {

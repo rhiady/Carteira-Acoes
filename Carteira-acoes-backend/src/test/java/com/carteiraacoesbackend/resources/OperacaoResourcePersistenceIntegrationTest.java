@@ -31,10 +31,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -55,7 +55,7 @@ class OperacaoResourcePersistenceIntegrationTest {
 
   private Carteira carteira;
   private Acao acao;
-  private MockHttpSession session;
+  private RequestPostProcessor session;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -92,21 +92,30 @@ class OperacaoResourcePersistenceIntegrationTest {
     acao.setDataHoraCotacao(OffsetDateTime.now(ZoneOffset.UTC));
     acoes.save(acao);
     session =
-        (MockHttpSession)
-            mockMvc
-                .perform(
-                    post("/auth/login")
-                        .contentType("application/json")
-                        .content("{\"email\":\"" + usuario.getEmail() + "\",\"senha\":\"senha\"}"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getRequest()
-                .getSession();
+        login(usuario.getEmail());
     mockMvc =
         MockMvcBuilders.webAppContextSetup(context)
             .apply(springSecurity())
-            .defaultRequest(get("/").session(session))
+            .defaultRequest(get("/").with(session))
             .build();
+  }
+
+  private RequestPostProcessor login(String email) throws Exception {
+    String response =
+        mockMvc
+            .perform(
+                post("/api/auth/login")
+                    .contentType("application/json")
+                    .content("{\"email\":\"" + email + "\",\"senha\":\"senha\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String token = response.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+    return request -> {
+      request.addHeader("Authorization", "Bearer " + token);
+      return request;
+    };
   }
 
   @AfterEach
@@ -124,7 +133,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/compras")
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content(
@@ -314,7 +323,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     mockMvc
         .perform(
             post("/operacoes/compras")
-                .session(session)
+                .with(session)
                 .with(csrf())
                 .contentType("application/json")
                 .content(
