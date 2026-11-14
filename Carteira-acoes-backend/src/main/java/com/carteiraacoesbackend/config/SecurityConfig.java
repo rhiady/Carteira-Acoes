@@ -88,6 +88,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/acoes", "/acoes/atualizar-cotacoes")
                     .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/acoes/*/cotacao")
+                        .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/acoes/**")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/corretoras")

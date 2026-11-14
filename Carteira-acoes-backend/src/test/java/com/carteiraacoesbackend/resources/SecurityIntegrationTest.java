@@ -2,12 +2,18 @@ package com.carteiraacoesbackend.resources;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Papel;
+import com.carteiraacoesbackend.clients.BrasilApiClient;
+import com.carteiraacoesbackend.dto.integrations.BrasilApiCnpjResponse;
+import com.carteiraacoesbackend.dto.integrations.BrasilApiCvmBrokerResponse;
+import com.carteiraacoesbackend.repositories.AcaoRepository;
+import com.carteiraacoesbackend.repositories.CorretoraRepository;
 import com.carteiraacoesbackend.integrations.Cotacao;
 import com.carteiraacoesbackend.integrations.CotacaoAdapter;
 import com.carteiraacoesbackend.repositories.UsuarioRepository;
@@ -31,11 +37,16 @@ class SecurityIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UsuarioRepository usuarios;
+  @Autowired private AcaoRepository acoes;
+  @Autowired private CorretoraRepository corretoras;
   @Autowired private PasswordEncoder passwords;
   @MockitoBean private CotacaoAdapter cotacaoAdapter;
+  @MockitoBean private BrasilApiClient brasilApiClient;
 
   @AfterEach
   void limpar() {
+    acoes.deleteAll();
+    corretoras.deleteAll();
     usuarios.deleteAll();
   }
 
@@ -70,6 +81,59 @@ class SecurityIntegrationTest {
   }
 
   @Test
+  void userCannotUseAdministrativeBrokerEndpoint() throws Exception {
+    criarUsuario("user-broker@test.com", Papel.USER);
+
+    mockMvc
+        .perform(
+            post("/corretoras")
+                .with(login("user-broker@test.com"))
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"cnpj\":\"61.855.045/0001-32\"}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+
+    mockMvc
+        .perform(delete("/acoes/{id}", 1L).with(login("user-broker@test.com")).with(csrf()))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(delete("/corretoras/{id}", 1L).with(login("user-broker@test.com")).with(csrf()))
+        .andExpect(status().isForbidden());
+
+    org.assertj.core.api.Assertions.assertThat(corretoras.count()).isZero();
+  }
+
+  @Test
+  void anonymousCannotUseAdministrativeOrQuoteMutationEndpoints() throws Exception {
+    mockMvc
+        .perform(
+            post("/acoes")
+                .contentType("application/json")
+                .content("{\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
+    mockMvc
+        .perform(post("/acoes/{id}/cotacao", 1L))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
+    org.assertj.core.api.Assertions.assertThat(acoes.count()).isZero();
+  }
+
+  @Test
+  void userCannotRefreshActionQuote() throws Exception {
+    criarUsuario("user-quote@test.com", Papel.USER);
+
+    mockMvc
+        .perform(
+            post("/acoes/{id}/cotacao", 1L)
+                .with(login("user-quote@test.com"))
+                .with(csrf()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+  }
+
+  @Test
   void adminCanUseAdministrativeActionEndpoint() throws Exception {
     criarUsuario("admin@test.com", Papel.ADMIN);
     when(cotacaoAdapter.consultar("PETR4", com.carteiraacoesbackend.domains.enums.Mercado.BRASIL))
@@ -82,6 +146,39 @@ class SecurityIntegrationTest {
                 .with(csrf())
                 .contentType("application/json")
                 .content("{\"ticker\":\"PETR4\",\"mercado\":\"BRASIL\"}"))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
+  void adminCanUseAdministrativeBrokerEndpoint() throws Exception {
+    criarUsuario("admin-broker@test.com", Papel.ADMIN);
+    when(brasilApiClient.consultarCnpj("61855045000132"))
+        .thenReturn(
+            new BrasilApiCnpjResponse(
+                "BRADESCO S/A CTVM",
+                "BRADESCO",
+                "contato@bradesco.com.br",
+                "1138479888",
+                "ATIVA",
+                "04543011",
+                "Avenida Presidente Juscelino Kubitschek",
+                "1309",
+                null,
+                "Vila Nova Conceição",
+                "São Paulo",
+                "SP"));
+    when(brasilApiClient.consultarCorretoraCvm("61855045000132"))
+        .thenReturn(
+            new BrasilApiCvmBrokerResponse(
+                "61.855.045/0001-32", "2038", "EM FUNCIONAMENTO NORMAL"));
+
+    mockMvc
+        .perform(
+            post("/corretoras")
+                .with(login("admin-broker@test.com"))
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"cnpj\":\"61.855.045/0001-32\"}"))
         .andExpect(status().isCreated());
   }
 
