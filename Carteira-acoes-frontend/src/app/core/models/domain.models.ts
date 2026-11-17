@@ -5,6 +5,7 @@ export type TipoOperacao = 'COMPRA' | 'VENDA';
 export interface Usuario { id: number; nome: string; email: string; createdAt: string; updatedAt: string; }
 export interface LoginRequest { login: string; password: string; }
 export interface LoginResponse { token: string; tipo: 'Bearer'; expiresIn: number; }
+export interface PasswordChangeRequest { password: string; }
 export type Authority = 'ROLE_ADMIN' | 'ROLE_USER';
 export interface AuthenticatedUser { id: number; login: string; authorities: readonly Authority[]; }
 export interface UsuarioRequest { nome: string; email: string; senha: string; }

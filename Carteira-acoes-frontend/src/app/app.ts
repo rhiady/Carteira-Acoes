@@ -42,6 +42,7 @@ export class App {
     if (url.startsWith('/carteiras')) return 'Carteiras';
     if (url.startsWith('/acoes')) return 'Ações';
     if (url.startsWith('/operacoes')) return 'Operações';
+    if (url.startsWith('/minha-conta')) return 'Minha conta';
     if (url.startsWith('/corretoras')) return 'Corretoras';
     if (url.startsWith('/usuarios')) return 'Usuários';
     return 'Início';

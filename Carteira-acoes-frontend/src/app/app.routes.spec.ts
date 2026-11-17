@@ -9,5 +9,8 @@ describe('application routes', () => {
     expect(routes.find((route) => route.path === 'dashboard')?.canActivate).toEqual([authGuard, roleGuard]);
     expect(routes.find((route) => route.path === 'admin')?.canActivate).toEqual([authGuard, roleGuard]);
     expect(routes.find((route) => route.path === 'admin')?.data).toEqual({ role: 'ROLE_ADMIN' });
+    expect(routes.find((route) => route.path === 'minha-conta')?.data).toEqual({ role: 'ROLE_USER' });
+    expect(routes.find((route) => route.path === 'usuarios')?.data).toEqual({ role: 'ROLE_ADMIN' });
+    expect(routes.find((route) => route.path === 'corretoras')?.data).toEqual({ role: 'ROLE_ADMIN' });
   });
 });

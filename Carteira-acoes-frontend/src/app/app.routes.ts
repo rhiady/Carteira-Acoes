@@ -7,6 +7,7 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   { path: 'admin', canActivate: [authGuard, roleGuard], data: { role: 'ROLE_ADMIN' }, loadComponent: () => import('./features/acesso/admin.page').then((m) => m.AdminPage) },
   { path: 'usuario', canActivate: [authGuard, roleGuard], data: { role: 'ROLE_USER' }, loadComponent: () => import('./features/acesso/user-access.page').then((m) => m.UserAccessPage) },
+  { path: 'minha-conta', canActivate: [authGuard, roleGuard], data: { role: 'ROLE_USER' }, loadComponent: () => import('./features/acesso/my-account.page').then((m) => m.MyAccountPage) },
   { path: 'acesso-negado', canActivate: [authGuard], loadComponent: () => import('./features/acesso/access-denied.page').then((m) => m.AccessDeniedPage) },
   { path: 'inicio', canActivate: [authGuard, roleGuard], data: { role: 'ROLE_USER' }, loadComponent: () => import('./features/inicio/inicio.page').then((m) => m.InicioPage) },
   { path: 'dashboard', canActivate: [authGuard, roleGuard], data: { role: 'ROLE_USER' }, loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage) },
