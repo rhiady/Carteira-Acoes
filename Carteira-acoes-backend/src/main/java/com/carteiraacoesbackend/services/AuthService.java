@@ -2,8 +2,10 @@ package com.carteiraacoesbackend.services;
 
 import com.carteiraacoesbackend.config.JwtProperties;
 import com.carteiraacoesbackend.dto.LoginRequest;
+import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
 import com.carteiraacoesbackend.dto.TokenResponse;
 import com.carteiraacoesbackend.exceptions.ApiException;
+import com.carteiraacoesbackend.repositories.UsuarioRepository;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,7 +17,9 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
@@ -25,14 +29,23 @@ public class AuthService {
   private final AuthenticationManager authenticationManager;
   private final JwtEncoder jwtEncoder;
   private final JwtProperties jwtProperties;
+  private final CurrentUserService currentUserService;
+  private final PasswordEncoder passwordEncoder;
+  private final UsuarioRepository usuarioRepository;
 
   public AuthService(
       AuthenticationManager authenticationManager,
       JwtEncoder jwtEncoder,
-      JwtProperties jwtProperties) {
+      JwtProperties jwtProperties,
+      CurrentUserService currentUserService,
+      PasswordEncoder passwordEncoder,
+      UsuarioRepository usuarioRepository) {
     this.authenticationManager = authenticationManager;
     this.jwtEncoder = jwtEncoder;
     this.jwtProperties = jwtProperties;
+    this.currentUserService = currentUserService;
+    this.passwordEncoder = passwordEncoder;
+    this.usuarioRepository = usuarioRepository;
   }
 
   public TokenResponse login(LoginRequest request) {
@@ -61,5 +74,12 @@ public class AuthService {
     JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).type("JWT").build();
     String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     return new TokenResponse(token, "Bearer", jwtProperties.expiration().toSeconds());
+  }
+
+  @Transactional
+  public void redefinirSenha(AlterarSenhaRequest request) {
+    var usuario = currentUserService.required();
+    usuario.setSenha(passwordEncoder.encode(request.password()));
+    usuarioRepository.save(usuario);
   }
 }

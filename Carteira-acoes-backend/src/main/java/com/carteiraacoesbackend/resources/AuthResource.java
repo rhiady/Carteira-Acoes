@@ -1,6 +1,7 @@
 package com.carteiraacoesbackend.resources;
 
 import com.carteiraacoesbackend.dto.LoginRequest;
+import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
 import com.carteiraacoesbackend.dto.TokenResponse;
 import com.carteiraacoesbackend.dto.AuthMeResponse;
 import com.carteiraacoesbackend.services.AuthService;
@@ -8,9 +9,11 @@ import com.carteiraacoesbackend.services.CurrentUserService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +34,12 @@ public class AuthResource {
     public ResponseEntity<TokenResponse> login(
             @Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PutMapping("/senha")
+    public ResponseEntity<Void> redefinirSenha(@Valid @RequestBody AlterarSenhaRequest request) {
+        authService.redefinirSenha(request);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/me")

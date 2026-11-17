@@ -2,6 +2,7 @@ package com.carteiraacoesbackend.resources;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -11,6 +12,7 @@ import com.carteiraacoesbackend.domains.enums.Papel;
 import java.time.Instant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -76,6 +78,54 @@ class AuthControllerIntegrationTest {
         .andExpect(jsonPath("$.id").value(usuarioId))
         .andExpect(jsonPath("$.login").value("ana@email.com"))
         .andExpect(jsonPath("$.authorities").value(org.hamcrest.Matchers.hasItem("ROLE_USER")));
+  }
+
+  @Test
+  @DisplayName("AC-001: usuário autenticado redefine a própria senha @spec:AC-001")
+  void authenticatedUserCanRedefineOwnPassword() throws Exception {
+    criarUsuario();
+    String token = login();
+
+    mockMvc
+        .perform(
+            put("/api/auth/senha")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("{\"password\":\"nova-senha\"}"))
+        .andExpect(status().isNoContent());
+
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType("application/json")
+                .content("{\"login\":\"ana@email.com\",\"password\":\"nova-senha\"}"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("AC-002: usuário não autenticado não redefine senha @spec:AC-002")
+  void unauthenticatedUserCannotRedefinePassword() throws Exception {
+    mockMvc
+        .perform(
+            put("/api/auth/senha")
+                .contentType("application/json")
+                .content("{\"password\":\"nova-senha\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("AC-003: senha inválida é rejeitada @spec:AC-003")
+  void invalidNewPasswordIsRejected() throws Exception {
+    criarUsuario();
+    String token = login();
+
+    mockMvc
+        .perform(
+            put("/api/auth/senha")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("{\"password\":\"curta\"}"))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
