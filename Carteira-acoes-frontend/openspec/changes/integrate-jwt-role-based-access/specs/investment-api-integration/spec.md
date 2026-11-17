@@ -1,14 +1,14 @@
 ## MODIFIED Requirements
 
 ### Requirement: Authentication uses the published frontend API contract
-The application SHALL model the authentication request and response as typed frontend data, call `POST /api/auth/login` through the centrally configured API URL, store the returned Bearer token only for authenticated requests, and call `GET /api/auth/me` to obtain `login` and `authorities`. It SHALL preserve the existing safe error normalization policy and SHALL not persist the submitted password.
+The application SHALL model the authentication request and response as typed frontend data, call `POST /api/auth/login` through the centrally configured API URL, store the returned Bearer token only for authenticated requests, and call `GET /api/auth/me` to obtain the official `id`, `login` and `authorities`. It SHALL preserve the existing safe error normalization policy and SHALL not persist the submitted password.
 
 #### Scenario: Authentication response is accepted
 - **WHEN** the endpoint returns `token`, `tipo` and `expiresIn`
 - **THEN** the frontend stores the session token metadata, requests the authenticated identity, and exposes only the typed login and authority data needed for access decisions
 
 #### Scenario: Authentication identity is accepted
-- **WHEN** `GET /api/auth/me` returns `login` and a supported authority
+- **WHEN** `GET /api/auth/me` returns `id`, `login` and a supported authority
 - **THEN** the frontend establishes the session and chooses the corresponding administrative or common area
 
 #### Scenario: Endpoint returns an API error message

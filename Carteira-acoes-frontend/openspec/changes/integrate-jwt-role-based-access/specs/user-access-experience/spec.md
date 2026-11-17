@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Authenticated identity scopes application data
-The application SHALL use the authenticated `login` and authorities returned by `/api/auth/me` as its identity and access context. User-owned wallet listings SHALL query the user-scoped endpoint when available, and Dashboard, wallets, wallet details, purchase, sale, operations and analytics SHALL not present another user's data through global user selection or client-side filtering. Administrative screens SHALL not substitute for user ownership and SHALL be limited to the administrative resources authorized by the backend.
+The application SHALL use the official authenticated `id`, `login` and authorities returned by `/api/auth/me` as its identity and access context. User-owned wallet listings SHALL query the user-scoped endpoint when available, and Dashboard, wallets, wallet details, purchase, sale, operations and analytics SHALL not present another user's data through global user selection or client-side filtering. Administrative screens SHALL not substitute for user ownership and SHALL be limited to the administrative resources authorized by the backend.
 
 #### Scenario: Common user opens wallets
 - **WHEN** a person authenticated with `ROLE_USER` opens the wallet list

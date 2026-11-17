@@ -10,59 +10,72 @@ describe('AuthService', () => {
   let httpTesting: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([{ path: 'login', redirectTo: '', pathMatch: 'full' }])] });
     service = TestBed.inject(AuthService);
     httpTesting = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => { httpTesting.verify(); localStorage.clear(); });
+  afterEach(() => { httpTesting.verify(); sessionStorage.clear(); localStorage.clear(); });
 
-  it('posts credentials and stores only the returned user identity', () => {
-    service.login({ email: 'ana@email.com', senha: 'segredo' }).subscribe();
-    const request = httpTesting.expectOne('/api/auth/login');
-    expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ email: 'ana@email.com', senha: 'segredo' });
-    request.flush({ id: 2, nome: 'Ana', email: 'ana@email.com', senha: 'should-not-persist' });
+  it('posts JWT credentials, stores only token metadata and loads /me', () => {
+    service.login({ login: 'admin@carteira.local', password: 'segredo' }).subscribe();
+    const login = httpTesting.expectOne('/api/auth/login');
+    expect(login.request.body).toEqual({ login: 'admin@carteira.local', password: 'segredo' });
+    login.flush({ token: 'jwt-token', tipo: 'Bearer', expiresIn: 3600 });
+    const me = httpTesting.expectOne('/api/auth/me');
+    me.flush({ id: 1, login: 'admin@carteira.local', authorities: ['ROLE_ADMIN'] });
 
-    expect(service.currentUser()).toEqual({ id: 2, nome: 'Ana', email: 'ana@email.com' });
-    expect(localStorage.getItem('authenticatedUser')).toBe(JSON.stringify({ id: 2, nome: 'Ana', email: 'ana@email.com' }));
-    expect(localStorage.getItem('authenticatedUser')).not.toContain('senha');
+    expect(service.currentUser()).toEqual({ id: 1, login: 'admin@carteira.local', authorities: ['ROLE_ADMIN'] });
+    expect(sessionStorage.getItem('authToken')).toBe('jwt-token');
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.getItem('authToken')).not.toContain('segredo');
   });
 
-  it('restores a valid local user and discards malformed storage', () => {
-    localStorage.setItem('authenticatedUser', JSON.stringify({ id: 3, nome: 'Bia', email: 'bia@email.com' }));
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
-    const restored = TestBed.inject(AuthService);
-    expect(restored.currentUser()).toEqual({ id: 3, nome: 'Bia', email: 'bia@email.com' });
-
-    localStorage.setItem('authenticatedUser', JSON.stringify({ id: 'invalid' }));
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
-    expect(TestBed.inject(AuthService).currentUser()).toBeNull();
-  });
-
-  it('propagates normalized authentication errors without storing a user', () => {
-    service.login({ email: 'ana@email.com', senha: 'errada' }).subscribe({ error: () => undefined });
-    const request = httpTesting.expectOne('/api/auth/login');
-    request.flush({ status: 401, message: 'invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
-    expect(service.currentUser()).toBeNull();
-    expect(localStorage.getItem('authenticatedUser')).toBeNull();
-  });
-
-  it('clears the authenticated identity and financial context on logout', () => {
-    localStorage.setItem('authenticatedUser', JSON.stringify({ id: 2, nome: 'Ana', email: 'ana@email.com' }));
-    localStorage.setItem('selectedWalletId', '7');
-    sessionStorage.setItem('financialFilters', '{"market":"BRASIL"}');
+  it('restores a valid token through /me after refresh', () => {
+    sessionStorage.setItem('authToken', 'stored-token');
+    sessionStorage.setItem('authTokenExpiresAt', String(Date.now() + 3600000));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([{ path: 'login', redirectTo: '', pathMatch: 'full' }])] });
-    const authenticated = TestBed.inject(AuthService);
+    const restored = TestBed.inject(AuthService);
+    const request = TestBed.inject(HttpTestingController).expectOne('/api/auth/me');
+    request.flush({ id: 3, login: 'bia@carteira.local', authorities: ['ROLE_USER'] });
+    expect(restored.currentUser()).toEqual({ id: 3, login: 'bia@carteira.local', authorities: ['ROLE_USER'] });
+  });
 
-    authenticated.logout();
+  it('does not establish a session for invalid credentials', () => {
+    service.login({ login: 'ana@email.com', password: 'errada' }).subscribe({ error: () => undefined });
+    httpTesting.expectOne('/api/auth/login').flush({ status: 401, message: 'Credenciais inválidas.' }, { status: 401, statusText: 'Unauthorized' });
+    expect(service.currentUser()).toBeNull();
+    expect(sessionStorage.getItem('authToken')).toBeNull();
+  });
 
-    expect(authenticated.currentUser()).toBeNull();
-    expect(localStorage.getItem('authenticatedUser')).toBeNull();
+  it('rejects an unsupported authority from /me', () => {
+    service.login({ login: 'ana@email.com', password: 'segredo' }).subscribe({ error: () => undefined });
+    httpTesting.expectOne('/api/auth/login').flush({ token: 'jwt-token', tipo: 'Bearer', expiresIn: 3600 });
+    httpTesting.expectOne('/api/auth/me').flush({ id: 2, login: 'ana@email.com', authorities: ['ROLE_SUPERUSER'] });
+    expect(service.currentUser()).toBeNull();
+    expect(sessionStorage.getItem('authToken')).toBeNull();
+  });
+
+  it('clears an expired token without restoring a session', () => {
+    sessionStorage.setItem('authToken', 'expired');
+    sessionStorage.setItem('authTokenExpiresAt', String(Date.now() - 1));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([{ path: 'login', redirectTo: '', pathMatch: 'full' }])] });
+    const expired = TestBed.inject(AuthService);
+    expect(expired.currentUser()).toBeNull();
+    expect(sessionStorage.getItem('authToken')).toBeNull();
+  });
+
+  it('clears token, identity and financial context on logout', () => {
+    sessionStorage.setItem('authToken', 'jwt-token');
+    sessionStorage.setItem('authTokenExpiresAt', String(Date.now() + 3600000));
+    localStorage.setItem('selectedWalletId', '7');
+    sessionStorage.setItem('financialFilters', '{"market":"BRASIL"}');
+    service.logout();
+    expect(service.currentUser()).toBeNull();
+    expect(sessionStorage.getItem('authToken')).toBeNull();
     expect(localStorage.getItem('selectedWalletId')).toBeNull();
     expect(sessionStorage.getItem('financialFilters')).toBeNull();
   });

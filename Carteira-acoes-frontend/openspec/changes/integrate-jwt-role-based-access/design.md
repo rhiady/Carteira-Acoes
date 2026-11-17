@@ -22,7 +22,7 @@ See `proposal.md` for motivation and the delta specs for the observable contract
 
 ### Use the published auth contract without decoding JWT
 
-Model login as `{ login, password }` and its response as `{ token, tipo, expiresIn }`; use `/api/auth/me` for identity and authorities. This avoids duplicating backend token claims and follows the explicit contract. Decoding JWT in the browser was rejected because it adds a dependency and would still not establish authorization.
+Model login as `{ login, password }` and its response as `{ token, tipo, expiresIn }`; use `/api/auth/me` for the official `id`, login and authorities. This avoids duplicating backend token claims and follows the explicit contract. Decoding JWT in the browser was rejected because it adds a dependency and would still not establish authorization.
 
 ### Keep the token in session storage and identity in memory
 

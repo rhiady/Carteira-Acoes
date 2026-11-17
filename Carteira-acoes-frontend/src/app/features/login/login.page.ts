@@ -26,21 +26,21 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
               <div class="login-error" role="alert" aria-live="assertive">{{ errorMessage() }}</div>
             }
             <div class="field-group">
-              <label for="login-email">Email</label>
-              <input id="login-email" type="email" autocomplete="email" inputmode="email" formControlName="email" placeholder="nome@email.com" [attr.aria-invalid]="showError('email')" aria-describedby="login-email-error">
-              @if (showError('email')) {
-                <p class="field-error" id="login-email-error" role="alert">{{ emailError() }}</p>
+              <label for="login-identifier">Login</label>
+              <input id="login-identifier" type="text" autocomplete="username" formControlName="login" placeholder="nome@email.com" [attr.aria-invalid]="showError('login')" aria-describedby="login-login-error">
+              @if (showError('login')) {
+                <p class="field-error" id="login-login-error" role="alert">Informe seu login.</p>
               }
             </div>
             <div class="field-group">
               <label for="login-password">Senha</label>
               <div class="password-control">
-                <input id="login-password" [type]="passwordVisible() ? 'text' : 'password'" autocomplete="current-password" formControlName="senha" [attr.aria-invalid]="showError('senha')" aria-describedby="login-password-error">
+                <input id="login-password" [type]="passwordVisible() ? 'text' : 'password'" autocomplete="current-password" formControlName="password" [attr.aria-invalid]="showError('password')" aria-describedby="login-password-error">
                 <button class="password-toggle" type="button" [attr.aria-label]="passwordVisible() ? 'Ocultar senha' : 'Mostrar senha'" [attr.aria-pressed]="passwordVisible()" (click)="passwordVisible.update((visible) => !visible)">
                   <mat-icon aria-hidden="true">{{ passwordVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
               </div>
-              @if (showError('senha')) {
+              @if (showError('password')) {
                 <p class="field-error" id="login-password-error" role="alert">Informe sua senha.</p>
               }
             </div>
@@ -117,17 +117,13 @@ export class LoginPage {
   protected readonly passwordVisible = signal(false);
   protected readonly submitted = signal(false);
   protected readonly form = new FormGroup({
-    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
-    senha: new FormControl('', { nonNullable: true, validators: Validators.required })
+    login: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+    password: new FormControl('', { nonNullable: true, validators: Validators.required })
   });
 
-  protected showError(control: 'email' | 'senha'): boolean {
+  protected showError(control: 'login' | 'password'): boolean {
     const field = this.form.controls[control];
     return field.invalid && (field.touched || this.submitted());
-  }
-
-  protected emailError(): string {
-    return this.form.controls.email.hasError('required') ? 'Informe seu email.' : 'Informe um email válido.';
   }
 
   protected submit(): void {
@@ -139,7 +135,7 @@ export class LoginPage {
     }
     this.loading.set(true);
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => void this.router.navigateByUrl('/inicio'),
+      next: (user) => void this.router.navigateByUrl(user.authorities.includes('ROLE_ADMIN') ? '/admin' : '/usuario'),
       error: (error: { status?: number }) => {
         this.errorMessage.set(error.status === 401 ? 'Email ou senha inválidos.' : 'Não foi possível entrar. Tente novamente.');
         this.loading.set(false);

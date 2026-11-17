@@ -17,7 +17,7 @@ describe('DashboardPage', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [
       provideRouter([]),
-      { provide: AuthService, useValue: { currentUser: vi.fn(() => ({ id: 1, nome: 'Ana', email: 'ana@email.com' })) } },
+      { provide: AuthService, useValue: { currentUser: vi.fn(() => ({ id: 1, login: 'ana@email.com', authorities: ['ROLE_USER'] })), hasAuthority: vi.fn(() => false) } },
       { provide: CarteiraService, useValue: { listForUser: vi.fn(() => of({ content: [{ id: 1, nome: 'Longo prazo', corretoraId: 2 }] })), summary: vi.fn(() => of({ carteiraId: 1, nome: 'Longo prazo', quantidadeAtivos: 2, resumosPorMoeda: [{ moeda: 'BRL', valorAtual: 10, lucroPrejuizo: 2 }, { moeda: 'USD', valorAtual: 10, lucroPrejuizo: -1 }] })), allPositions: vi.fn(() => of(positions)) } },
       { provide: AcaoService, useValue: { updateAllQuotes: vi.fn() } },
       { provide: FeedbackService, useValue: { success: vi.fn(), error: vi.fn() } },

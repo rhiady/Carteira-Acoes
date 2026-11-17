@@ -21,9 +21,9 @@ interface PortfolioOverview {
       @if (loading()) { <app-loading-state message="Carregando suas carteiras…" /> }
       @else if (error()) { <app-error-state [message]="error()" (retry)="load()" /> }
       @else if (!user()) { <app-empty-state message="Não foi possível identificar sua sessão." /> }
-      @else if (!portfolios().length) { <div class="inicio-context"><span>Carteiras de</span><strong>{{ user()!.nome }}</strong></div><app-empty-state message="Você ainda não possui carteiras." /><a class="inicio-primary-link" routerLink="/carteiras/nova">Criar carteira</a> }
+      @else if (!portfolios().length) { <div class="inicio-context"><span>Carteiras de</span><strong>{{ user()!.login }}</strong></div><app-empty-state message="Você ainda não possui carteiras." /><a class="inicio-primary-link" routerLink="/carteiras/nova">Criar carteira</a> }
       @else {
-        <div class="inicio-context"><span>Carteiras de</span><strong>{{ user()!.nome }}</strong><small>Dados organizados a partir da sua conta.</small></div>
+        <div class="inicio-context"><span>Carteiras de</span><strong>{{ user()!.login }}</strong><small>Dados organizados a partir da sua conta.</small></div>
         <div class="inicio-portfolio-grid" aria-label="Carteiras disponíveis">
           @for (overview of overviews(); track overview.portfolio.id) {
             <article class="inicio-portfolio-card"><div><span class="eyebrow">Carteira</span><h2>{{ overview.portfolio.nome }}</h2><p>Corretora #{{ overview.portfolio.corretoraId }}</p></div>@if (overview.summary) { <div class="inicio-portfolio-card__metrics">@for (subtotal of overview.summary.resumosPorMoeda; track subtotal.moeda) { <div><span>Valor · {{ subtotal.moeda }}</span><strong>{{ money(subtotal.valorAtual, subtotal.moeda) }}</strong><small>{{ signedMoney(subtotal.lucroPrejuizo, subtotal.moeda) }}</small></div> }</div> } @else { <p class="inicio-unavailable">Resumo financeiro indisponível.</p> }<a [routerLink]="['/carteiras', overview.portfolio.id]">Abrir carteira <span aria-hidden="true">→</span></a></article>

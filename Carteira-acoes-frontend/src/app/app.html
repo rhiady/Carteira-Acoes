@@ -3,10 +3,10 @@
 <header>
   <mat-toolbar class="topbar">
     <button mat-button type="button" class="menu-button" (click)="toggleNavigation()" [attr.aria-expanded]="navigationOpen()" aria-controls="primary-navigation"><mat-icon aria-hidden="true">menu</mat-icon><span>Menu</span></button>
-    <a class="brand" routerLink="/dashboard" aria-label="Carteira Ações, ir para visão geral"><span class="brand-mark" aria-hidden="true"><mat-icon>show_chart</mat-icon></span><span>Carteira Ações</span></a>
+    <a class="brand" [routerLink]="auth.hasAuthority('ROLE_ADMIN') ? '/admin' : '/usuario'" aria-label="Carteira Ações, ir para sua área"><span class="brand-mark" aria-hidden="true"><mat-icon>show_chart</mat-icon></span><span>Carteira Ações</span></a>
     <span class="toolbar-spacer"></span>
     <span class="toolbar-page-title" aria-live="polite">{{ pageTitle() }}</span>
-    @if (auth.currentUser(); as user) { <span class="toolbar-user" aria-label="Usuário autenticado">{{ user.nome }}</span> }
+    @if (auth.currentUser(); as user) { <span class="toolbar-user" aria-label="Usuário autenticado">{{ user.login }}</span> }
     <span class="toolbar-description"><span class="live-dot" aria-hidden="true"></span>Gestão de investimentos</span>
     <app-theme-toggle />
     <button mat-button type="button" (click)="logout()">Sair</button>
@@ -16,19 +16,20 @@
 <mat-sidenav-container class="app-layout">
   <mat-sidenav id="primary-navigation" [mode]="compactNavigation() ? 'over' : 'side'" [opened]="navigationOpen()" (openedChange)="navigationOpen.set($event)">
     <nav aria-label="Principal">
-      <p class="navigation-label">Investimentos</p>
+      @if (!auth.hasAuthority('ROLE_ADMIN')) { <p class="navigation-label">Investimentos</p>
       <mat-nav-list aria-label="Investimentos">
         <a mat-list-item routerLink="/inicio" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">home</mat-icon><span matListItemTitle>Início</span></a>
         <a mat-list-item routerLink="/dashboard" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">dashboard</mat-icon><span matListItemTitle>Dashboard</span></a>
         <a mat-list-item routerLink="/carteiras" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">account_balance_wallet</mat-icon><span matListItemTitle>Carteiras</span></a>
         <a mat-list-item routerLink="/acoes" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">trending_up</mat-icon><span matListItemTitle>Ações</span></a>
         <a mat-list-item routerLink="/operacoes" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">swap_horiz</mat-icon><span matListItemTitle>Operações</span></a>
-      </mat-nav-list>
-      <p class="navigation-label navigation-label--secondary">Gestão</p>
+      </mat-nav-list> }
+      @if (auth.hasAuthority('ROLE_ADMIN')) { <p class="navigation-label navigation-label--secondary">Administração</p>
       <mat-nav-list aria-label="Gestão">
         <a mat-list-item routerLink="/corretoras" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">account_balance</mat-icon><span matListItemTitle>Corretoras</span></a>
         <a mat-list-item routerLink="/usuarios" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">group</mat-icon><span matListItemTitle>Usuários</span></a>
-      </mat-nav-list>
+        <a mat-list-item routerLink="/admin" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">admin_panel_settings</mat-icon><span matListItemTitle>Administração</span></a>
+      </mat-nav-list> }
     </nav>
   </mat-sidenav>
   <mat-sidenav-content>

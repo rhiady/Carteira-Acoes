@@ -2,8 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import axe from 'axe-core';
+import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { LoginPage } from './login.page';
 
@@ -25,7 +28,7 @@ describe('LoginPage', () => {
   it('shows understandable validation and toggles password visibility', () => {
     (fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Informe seu email.');
+    expect(fixture.nativeElement.textContent).toContain('Informe seu login.');
     expect(fixture.nativeElement.textContent).toContain('Informe sua senha.');
 
     (fixture.nativeElement.querySelector('.password-toggle') as HTMLButtonElement).click();
@@ -34,7 +37,7 @@ describe('LoginPage', () => {
   });
 
   it('preserves the filled form while switching themes on login', () => {
-    const email = fixture.nativeElement.querySelector('#login-email') as HTMLInputElement;
+    const email = fixture.nativeElement.querySelector('#login-identifier') as HTMLInputElement;
     const password = fixture.nativeElement.querySelector('#login-password') as HTMLInputElement;
     const themeToggle = fixture.nativeElement.querySelector('.auth-theme-toggle button') as HTMLButtonElement;
 
@@ -67,6 +70,20 @@ describe('LoginPage', () => {
       expect(submit.textContent?.trim()).toBe('Entrando…');
       expect(submit.classList).toContain('login-submit');
     }
+  });
+
+  it('submits the published credentials and routes an administrator to the admin area', () => {
+    const auth = TestBed.inject(AuthService);
+    vi.spyOn(auth, 'login').mockReturnValue(of({ id: 1, login: 'admin@carteira.local', authorities: ['ROLE_ADMIN'] }));
+    const navigateByUrl = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const login = fixture.nativeElement.querySelector('#login-identifier') as HTMLInputElement;
+    const password = fixture.nativeElement.querySelector('#login-password') as HTMLInputElement;
+    login.value = 'admin@carteira.local'; login.dispatchEvent(new Event('input'));
+    password.value = 'senha-segura'; password.dispatchEvent(new Event('input'));
+    (fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+
+    expect(auth.login).toHaveBeenCalledWith({ login: 'admin@carteira.local', password: 'senha-segura' });
+    expect(navigateByUrl).toHaveBeenCalledWith('/admin');
   });
 
   it('declares deterministic Material and native CTA states', () => {

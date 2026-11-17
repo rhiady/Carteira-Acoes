@@ -20,7 +20,7 @@ describe('CarteirasPage', () => {
     TestBed.configureTestingModule({ providers: [
       provideRouter([]),
       { provide: CarteiraService, useValue: service },
-      { provide: AuthService, useValue: { currentUser: vi.fn(() => ({ id: 7, nome: 'Ana', email: 'ana@email.com' })) } },
+      { provide: AuthService, useValue: { currentUser: vi.fn(() => ({ id: 7, login: 'ana@email.com', authorities: ['ROLE_USER'] })) } },
       { provide: MatDialog, useValue: { open: vi.fn() } },
     ] });
   });

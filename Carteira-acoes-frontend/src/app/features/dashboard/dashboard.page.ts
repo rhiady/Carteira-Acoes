@@ -19,12 +19,12 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [MatButtonModule, MatIconModule, RouterLink, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, ChartPanelComponent],
   template: `
     <section class="dashboard-page">
-      <div class="page-heading dashboard-heading"><div><p class="eyebrow">Carteira</p><h1>Visão geral da carteira</h1><p>Acompanhe valor, resultado e composição com dados oficiais.</p></div><button mat-flat-button type="button" [disabled]="refreshing()" (click)="refreshQuotes()"><mat-icon aria-hidden="true">refresh</mat-icon>{{ refreshing() ? 'Atualizando cotações…' : 'Atualizar cotações' }}</button></div>
+      <div class="page-heading dashboard-heading"><div><p class="eyebrow">Carteira</p><h1>Visão geral da carteira</h1><p>Acompanhe valor, resultado e composição com dados oficiais.</p></div>@if (auth.hasAuthority('ROLE_ADMIN')) { <button mat-flat-button type="button" [disabled]="refreshing()" (click)="refreshQuotes()"><mat-icon aria-hidden="true">refresh</mat-icon>{{ refreshing() ? 'Atualizando cotações…' : 'Atualizar cotações' }}</button> }</div>
       @if (loading()) { <app-loading-state message="Carregando resumo…" /> }
       @else if (error()) { <app-error-state [message]="error()" (retry)="load()" /> }
       @else if (!user()) { <app-empty-state message="Não foi possível identificar sua sessão." /> }
       @else {
-        <p class="context-note">Carteiras de {{ user()!.nome }}.</p>
+        <p class="context-note">Carteiras de {{ user()!.login }}.</p>
         @if (!portfolios()?.content?.length) { <app-empty-state message="Você ainda não possui carteiras. Crie a primeira para registrar operações." /><a mat-flat-button routerLink="/carteiras/nova">Criar carteira</a> }
         @else {
           <div class="dashboard-context"><label for="analytics-portfolio">Carteira em foco</label><select id="analytics-portfolio" [value]="analyticsPortfolioId() ?? portfolios()!.content[0].id" (change)="selectPortfolio($any($event.target).value)">@for (portfolio of portfolios()!.content; track portfolio.id) {<option [value]="portfolio.id">{{ portfolio.nome }}</option>}</select><span class="dashboard-context__actions"><a mat-flat-button [routerLink]="['/carteiras', analyticsPortfolioId() ?? portfolios()!.content[0].id, 'comprar']"><mat-icon aria-hidden="true">add</mat-icon> Comprar ação</a><a [routerLink]="['/carteiras', analyticsPortfolioId() ?? portfolios()!.content[0].id]">Abrir carteira <mat-icon aria-hidden="true">arrow_forward</mat-icon></a></span></div>
@@ -45,7 +45,7 @@ import { AuthService } from '../../core/services/auth.service';
     </section>`,
 })
 export class DashboardPage {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly carteiras = inject(CarteiraService);
   private readonly stocks = inject(AcaoService);
   private readonly feedback = inject(FeedbackService);

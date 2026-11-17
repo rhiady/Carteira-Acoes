@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Login request and processing state
-The system SHALL send `POST /api/auth/login` with `{ "login": "...", "password": "..." }` using the configured API base URL. While the request is pending, the CTA SHALL indicate `Entrando…`, be disabled, and prevent duplicate submissions. On success, the system SHALL store the returned Bearer token only in the session mechanism defined by the application and SHALL call `GET /api/auth/me` to obtain the authenticated login and authorities.
+The system SHALL send `POST /api/auth/login` with `{ "login": "...", "password": "..." }` using the configured API base URL. While the request is pending, the CTA SHALL indicate `Entrando…`, be disabled, and prevent duplicate submissions. On success, the system SHALL store the returned Bearer token only in the session mechanism defined by the application and SHALL call `GET /api/auth/me` to obtain the authenticated `id`, login and authorities.
 
 #### Scenario: Valid credentials
 - **WHEN** the backend accepts the submitted credentials and returns `token`, `tipo` and `expiresIn`
@@ -16,7 +16,7 @@ The system SHALL send `POST /api/auth/login` with `{ "login": "...", "password":
 - **THEN** the frontend shows `Não foi possível entrar. Tente novamente.` without technical details and does not establish a session
 
 ### Requirement: Local authenticated user and logout
-The system SHALL expose authenticated session state containing the token needed for requests, its expiry information, login and authorities, and SHALL never store the password or expose the token as user-facing identity data. A `Sair` action SHALL remove the token and authenticated identity, clear the in-memory financial context, and redirect to `/login`.
+The system SHALL expose authenticated session state containing the token needed for requests, its expiry information, `id`, login and authorities, and SHALL never store the password or expose the token as user-facing identity data. A `Sair` action SHALL remove the token and authenticated identity, clear the in-memory financial context, and redirect to `/login`.
 
 #### Scenario: Refresh with an unexpired stored token
 - **WHEN** the application starts with a stored unexpired token

@@ -11,13 +11,14 @@ import { FeedbackService } from '../../core/services/feedback.service';
 import { EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent } from '../../shared/components/ui-states.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { maintenanceError } from '../../core/services/maintenance-error';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-acoes-page',
   imports: [MatButtonModule, MatMenuModule, RouterLink, CurrencyPipe, DatePipe, ReactiveFormsModule, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent],
   template: `
     <section>
-      <div class="page-heading"><div><p class="eyebrow">Mercado</p><h1>Ações</h1><p>Consulte ativos existentes e mantenha as cotações atualizadas.</p></div><button mat-stroked-button type="button" [disabled]="refreshing()" (click)="refreshQuotes()">{{ refreshing() ? 'Atualizando cotações…' : 'Atualizar cotações' }}</button></div>
+      <div class="page-heading"><div><p class="eyebrow">Mercado</p><h1>Ações</h1><p>Consulte ativos existentes e mantenha as cotações atualizadas.</p></div>@if (auth.hasAuthority('ROLE_ADMIN')) { <button mat-stroked-button type="button" [disabled]="refreshing()" (click)="refreshQuotes()">{{ refreshing() ? 'Atualizando cotações…' : 'Atualizar cotações' }}</button> }</div>
       <form class="search-form action-search" (ngSubmit)="search()"><label for="ticker-search">Buscar por ticker</label><input id="ticker-search" [formControl]="ticker" placeholder="Ex.: PETR4" aria-describedby="ticker-search-help" /><p id="ticker-search-help" class="helper-text">A busca abre o ativo existente; novas ações são fornecidas pela integração de cotações.</p><div class="page-actions"><button mat-stroked-button type="submit" [disabled]="ticker.invalid || searching()">{{ searching() ? 'Buscando…' : 'Buscar ação' }}</button><button mat-button type="button" (click)="clearSearch()">Limpar busca</button></div></form>
       @if (loading()) { <app-loading-state message="Carregando ações…" /> }
       @else if (error()) { <app-error-state [message]="error()" (retry)="load()" /> }
@@ -35,7 +36,7 @@ import { maintenanceError } from '../../core/services/maintenance-error';
                 <div><h2>{{ item.ticker }}</h2><p>{{ item.nomeEmpresa }}</p></div>
                 <div><span>Mercado</span><strong>{{ item.mercado === 'BRASIL' ? 'Brasil' : 'EUA' }}</strong></div>
                 <div><span>Cotação</span><strong>{{ item.cotacaoAtual | currency:item.moeda }}</strong><small>Atualizada em {{ item.dataHoraCotacao | date:'short' }}</small></div>
-                <div><a mat-button [routerLink]="['/acoes', item.id]" [attr.aria-label]="'Ver ativo ' + item.ticker">Ver ativo</a><button mat-button type="button" [matMenuTriggerFor]="assetActions" [attr.aria-label]="'Mais ações para ' + item.ticker">Mais ações</button><mat-menu #assetActions="matMenu"><button mat-menu-item type="button" (click)="remove(item)">Excluir ação</button></mat-menu></div>
+                <div><a mat-button [routerLink]="['/acoes', item.id]" [attr.aria-label]="'Ver ativo ' + item.ticker">Ver ativo</a>@if (auth.hasAuthority('ROLE_ADMIN')) { <button mat-button type="button" [matMenuTriggerFor]="assetActions" [attr.aria-label]="'Mais ações para ' + item.ticker">Mais ações</button><mat-menu #assetActions="matMenu"><button mat-menu-item type="button" (click)="remove(item)">Excluir ação</button></mat-menu> }</div>
               </article>
             }
           </div>
@@ -45,6 +46,7 @@ import { maintenanceError } from '../../core/services/maintenance-error';
     </section>`,
 })
 export class AcoesPage {
+  protected readonly auth = inject(AuthService);
   private readonly service = inject(AcaoService);
   private readonly dialog = inject(MatDialog);
   private readonly feedback = inject(FeedbackService);

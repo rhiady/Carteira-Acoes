@@ -3,9 +3,10 @@ export type Moeda = 'BRL' | 'USD';
 export type TipoOperacao = 'COMPRA' | 'VENDA';
 
 export interface Usuario { id: number; nome: string; email: string; createdAt: string; updatedAt: string; }
-export interface LoginRequest { email: string; senha: string; }
-export interface AuthenticatedUser { id: number; nome: string; email: string; }
-export type LoginResponse = AuthenticatedUser;
+export interface LoginRequest { login: string; password: string; }
+export interface LoginResponse { token: string; tipo: 'Bearer'; expiresIn: number; }
+export type Authority = 'ROLE_ADMIN' | 'ROLE_USER';
+export interface AuthenticatedUser { id: number; login: string; authorities: readonly Authority[]; }
 export interface UsuarioRequest { nome: string; email: string; senha: string; }
 export interface UsuarioUpdateRequest { nome: string; email: string; senha?: string; }
 export interface Acao { id: number; ticker: string; nomeEmpresa: string; mercado: Mercado; moeda: Moeda; cotacaoAtual: number; dataHoraCotacao: string; createdAt: string; updatedAt: string; }

@@ -20,7 +20,7 @@ describe('InicioPage', () => {
   });
 
   it('composes portfolio entry cards from published user, portfolio and summary responses', () => {
-    auth.currentUser.mockReturnValue({ id: 2, nome: 'Ana', email: 'ana@email.com' });
+    auth.currentUser.mockReturnValue({ id: 2, login: 'ana@email.com', authorities: ['ROLE_USER'] });
     portfolios.listForUser.mockReturnValue(of({ content: [{ id: 7, nome: 'Longo prazo', corretoraId: 3 }] }));
     portfolios.summary.mockReturnValue(of({ carteiraId: 7, nome: 'Longo prazo', quantidadeAtivos: 2, resumosPorMoeda: [{ moeda: 'BRL', valorAtual: 100, lucroPrejuizo: 5 }] }));
 
@@ -33,7 +33,7 @@ describe('InicioPage', () => {
   });
 
   it('keeps a truthful unavailable state when a portfolio summary fails', () => {
-    auth.currentUser.mockReturnValue({ id: 2, nome: 'Ana', email: 'ana@email.com' });
+    auth.currentUser.mockReturnValue({ id: 2, login: 'ana@email.com', authorities: ['ROLE_USER'] });
     portfolios.listForUser.mockReturnValue(of({ content: [{ id: 7, nome: 'Longo prazo', corretoraId: 3 }] }));
     portfolios.summary.mockReturnValue(throwError(() => new Error('summary unavailable')));
 
