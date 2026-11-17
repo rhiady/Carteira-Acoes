@@ -67,11 +67,13 @@ class AuthControllerIntegrationTest {
   @Test
   void authenticatesMeFromBearerToken() throws Exception {
     criarUsuario();
+    Long usuarioId = usuarios.findByEmail("ana@email.com").orElseThrow().getId();
     String token = login();
 
     mockMvc
         .perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(usuarioId))
         .andExpect(jsonPath("$.login").value("ana@email.com"))
         .andExpect(jsonPath("$.authorities").value(org.hamcrest.Matchers.hasItem("ROLE_USER")));
   }
