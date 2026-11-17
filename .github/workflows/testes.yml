@@ -14,13 +14,15 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: maven
+          cache-dependency-path: Carteira-acoes-backend/pom.xml
 
       - run: ./mvnw --batch-mode clean verify
+        working-directory: Carteira-acoes-backend
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: relatorio-jacoco
-          path: target/site/jacoco/
+          path: Carteira-acoes-backend/target/site/jacoco/
