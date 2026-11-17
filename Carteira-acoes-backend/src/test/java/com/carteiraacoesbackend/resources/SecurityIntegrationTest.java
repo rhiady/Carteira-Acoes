@@ -96,6 +96,61 @@ class SecurityIntegrationTest {
   }
 
   @Test
+  void commonUserCannotReadOrModifyUsers() throws Exception {
+    Usuario actor = criarUsuario("user-actor@test.com", Papel.USER);
+    Usuario target = criarUsuario("user-target@test.com", Papel.USER);
+    RequestPostProcessor session = login(actor.getEmail());
+
+    mockMvc
+        .perform(get("/api/usuarios/{id}", target.getId()).with(session))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+
+    mockMvc
+        .perform(
+            post("/api/usuarios")
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content(
+                    "{\"login\":\"blocked-create@test.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            put("/api/usuarios/{id}", target.getId())
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"login\":\"blocked-update@test.com\",\"ativo\":false}"))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            put("/api/usuarios/{id}/senha", target.getId())
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"password\":\"nova-senha\"}"))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            put("/api/usuarios/{id}/papel", target.getId())
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"papel\":\"ADMIN\"}"))
+        .andExpect(status().isForbidden());
+
+    org.assertj.core.api.Assertions.assertThat(usuarios.count()).isEqualTo(2);
+    org.assertj.core.api.Assertions.assertThat(usuarios.findById(target.getId()).orElseThrow().getPapel())
+        .isEqualTo(Papel.USER);
+    org.assertj.core.api.Assertions.assertThat(usuarios.findById(target.getId()).orElseThrow().getEmail())
+        .isEqualTo("user-target@test.com");
+  }
+
+  @Test
   void userCannotUseAdministrativeActionEndpoint() throws Exception {
     criarUsuario("user@test.com", Papel.USER);
     RequestPostProcessor session = login("user@test.com");
