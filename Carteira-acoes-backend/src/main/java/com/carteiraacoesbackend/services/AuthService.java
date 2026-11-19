@@ -62,7 +62,10 @@ public class AuthService {
     Instant issuedAt = Instant.now();
     Instant expiresAt = issuedAt.plus(jwtProperties.expiration());
     List<String> authorities =
-        authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+        authentication.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .filter(authority -> authority.startsWith("ROLE_"))
+            .toList();
     JwtClaimsSet claims =
         JwtClaimsSet.builder()
             .issuer(jwtProperties.issuer())

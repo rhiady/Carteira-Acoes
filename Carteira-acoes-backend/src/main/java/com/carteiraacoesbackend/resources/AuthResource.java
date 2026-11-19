@@ -47,6 +47,7 @@ public class AuthResource {
         var usuario = currentUserService.required();
         List<String> authorities = authentication.getAuthorities().stream()
                 .map(authority -> authority.getAuthority())
+                .filter(authority -> authority.startsWith("ROLE_"))
                 .toList();
         return ResponseEntity.ok(new AuthMeResponse(usuario.getId(), usuario.getEmail(), authorities));
     }

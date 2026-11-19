@@ -4,13 +4,13 @@ import axe from 'axe-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminPage } from './admin.page';
-import { UserAccessPage } from './user-access.page';
 
 describe('role access pages', () => {
-  const auth = { logout: vi.fn(), hasAuthority: vi.fn(() => false) };
+  const auth = { logout: vi.fn(), hasAuthority: vi.fn(() => false), currentUser: vi.fn() };
 
   beforeEach(() => {
-    auth.logout.mockReset(); auth.hasAuthority.mockReset(); auth.hasAuthority.mockReturnValue(false);
+    auth.logout.mockReset(); auth.hasAuthority.mockReset(); auth.hasAuthority.mockReturnValue(false); auth.currentUser.mockReset();
+    auth.currentUser.mockReturnValue({ id: 1, login: 'admin@carteira.local', authorities: ['ROLE_ADMIN'] });
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useValue: auth }] });
   });
 
@@ -18,15 +18,9 @@ describe('role access pages', () => {
     const fixture: ComponentFixture<AdminPage> = TestBed.createComponent(AdminPage);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Administração');
+    expect(fixture.nativeElement.textContent).toContain('admin@carteira.local');
     expect(fixture.nativeElement.querySelectorAll('a')).toHaveLength(3);
-    expect((await axe.run(fixture.nativeElement, { rules: { 'color-contrast': { enabled: false } } })).violations).toEqual([]);
-  });
-
-  it('renders the common-user navigation separately', async () => {
-    const fixture: ComponentFixture<UserAccessPage> = TestBed.createComponent(UserAccessPage);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Seus investimentos');
-    expect(fixture.nativeElement.textContent).not.toContain('Usuários');
+    expect(fixture.nativeElement.querySelector('a.role-entry__link--primary')?.getAttribute('href')).toBe('/usuarios');
     expect((await axe.run(fixture.nativeElement, { rules: { 'color-contrast': { enabled: false } } })).violations).toEqual([]);
   });
 });

@@ -32,6 +32,9 @@ services:
       context: ../Carteira-acoes-backend
       dockerfile: Dockerfile
 
+    env_file:
+      - ../Carteira-acoes-backend/.env
+
     container_name: carteira-acoes-backend-deploy
 
     environment:

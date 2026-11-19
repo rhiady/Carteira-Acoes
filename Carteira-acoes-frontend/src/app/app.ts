@@ -38,7 +38,7 @@ export class App {
   }
 
   private titleForUrl(url: string): string {
-    if (url.startsWith('/dashboard')) return 'Dashboard';
+    if (url.startsWith('/admin')) return 'Administração';
     if (url.startsWith('/carteiras')) return 'Carteiras';
     if (url.startsWith('/acoes')) return 'Ações';
     if (url.startsWith('/operacoes')) return 'Operações';

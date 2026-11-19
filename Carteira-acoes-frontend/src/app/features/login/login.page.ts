@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,22 +26,22 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
               <div class="login-error" role="alert" aria-live="assertive">{{ errorMessage() }}</div>
             }
             <div class="field-group">
-              <label for="login-identifier">Login</label>
-              <input id="login-identifier" type="text" autocomplete="username" formControlName="login" placeholder="nome@email.com" [attr.aria-invalid]="showError('login')" aria-describedby="login-login-error">
+              <label for="login-identifier">Email</label>
+              <input id="login-identifier" type="email" autocomplete="username" formControlName="login" placeholder="nome@email.com" [attr.aria-invalid]="showError('login')" [attr.aria-describedby]="showError('login') ? 'login-login-error' : null">
               @if (showError('login')) {
-                <p class="field-error" id="login-login-error" role="alert">Informe seu login.</p>
+                <p class="field-error" id="login-login-error">Informe seu email.</p>
               }
             </div>
             <div class="field-group">
               <label for="login-password">Senha</label>
               <div class="password-control">
-                <input id="login-password" [type]="passwordVisible() ? 'text' : 'password'" autocomplete="current-password" formControlName="password" [attr.aria-invalid]="showError('password')" aria-describedby="login-password-error">
+                <input id="login-password" [type]="passwordVisible() ? 'text' : 'password'" autocomplete="current-password" formControlName="password" [attr.aria-invalid]="showError('password')" [attr.aria-describedby]="showError('password') ? 'login-password-error' : null">
                 <button class="password-toggle" type="button" [attr.aria-label]="passwordVisible() ? 'Ocultar senha' : 'Mostrar senha'" [attr.aria-pressed]="passwordVisible()" (click)="passwordVisible.update((visible) => !visible)">
                   <mat-icon aria-hidden="true">{{ passwordVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
               </div>
               @if (showError('password')) {
-                <p class="field-error" id="login-password-error" role="alert">Informe sua senha.</p>
+                <p class="field-error" id="login-password-error">Informe sua senha.</p>
               }
             </div>
             <button class="login-submit" mat-flat-button type="submit" [disabled]="loading()">
@@ -110,6 +110,7 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
   `
 })
 export class LoginPage {
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   protected readonly loading = signal(false);
@@ -131,11 +132,15 @@ export class LoginPage {
     this.errorMessage.set('');
     if (this.form.invalid || this.loading()) {
       this.form.markAllAsTouched();
+      queueMicrotask(() => {
+        const firstInvalid = this.host.nativeElement.querySelector('[aria-invalid="true"]') as HTMLInputElement | null;
+        firstInvalid?.focus();
+      });
       return;
     }
     this.loading.set(true);
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: (user) => void this.router.navigateByUrl(user.authorities.includes('ROLE_ADMIN') ? '/admin' : '/usuario'),
+      next: (user) => void this.router.navigateByUrl(user.authorities.includes('ROLE_ADMIN') ? '/admin' : '/inicio'),
       error: (error: { status?: number }) => {
         this.errorMessage.set(error.status === 401 ? 'Email ou senha inválidos.' : 'Não foi possível entrar. Tente novamente.');
         this.loading.set(false);

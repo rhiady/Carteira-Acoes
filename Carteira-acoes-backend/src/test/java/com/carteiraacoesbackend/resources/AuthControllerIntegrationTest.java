@@ -64,6 +64,9 @@ class AuthControllerIntegrationTest {
     String token = response.replaceAll(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
     org.assertj.core.api.Assertions.assertThat(jwtDecoder.decode(token).getSubject())
         .isEqualTo("ana@email.com");
+    org.assertj.core.api.Assertions.assertThat(
+            jwtDecoder.decode(token).getClaimAsStringList("authorities"))
+        .containsExactly("ROLE_USER");
   }
 
   @Test
@@ -77,7 +80,7 @@ class AuthControllerIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(usuarioId))
         .andExpect(jsonPath("$.login").value("ana@email.com"))
-        .andExpect(jsonPath("$.authorities").value(org.hamcrest.Matchers.hasItem("ROLE_USER")));
+        .andExpect(jsonPath("$.authorities").value(org.hamcrest.Matchers.contains("ROLE_USER")));
   }
 
   @Test

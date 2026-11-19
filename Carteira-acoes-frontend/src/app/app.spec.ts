@@ -3,12 +3,19 @@ import axe from 'axe-core';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { routes } from './app.routes';
+import { AuthService } from './core/services/auth.service';
+import { signal } from '@angular/core';
+import { vi } from 'vitest';
 
 describe('App', () => {
+  const logout = vi.fn();
+  const auth = { currentUser: signal({ id: 2, login: 'ana@email.com', authorities: ['ROLE_USER'] }), hasAuthority: vi.fn(() => false), logout };
+
   beforeEach(async () => {
+    logout.mockReset();
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes)],
+      providers: [provideRouter(routes), { provide: AuthService, useValue: auth }],
     }).compileComponents();
   });
 
@@ -23,6 +30,16 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('nav[aria-label="Principal"]')?.textContent).toContain('Carteiras');
+    expect(compiled.querySelector('nav[aria-label="Principal"]')?.textContent).not.toContain('Dashboard');
+    expect(compiled.querySelector('.navigation-utilities')?.textContent).toContain('ana@email.com');
+    expect(compiled.querySelector('.navigation-utilities')?.textContent).toContain('Minha conta');
+  });
+
+  it('logs out from the personal utility region', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.navigation-utilities button') as HTMLButtonElement).click();
+    expect(logout).toHaveBeenCalledOnce();
   });
 
   it('toggles the navigation from its keyboard-accessible menu button', async () => {

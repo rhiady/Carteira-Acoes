@@ -8,12 +8,13 @@ import { MyAccountPage } from './my-account.page';
 
 describe('MyAccountPage', () => {
   const changePassword = vi.fn();
+  const logout = vi.fn();
 
   beforeEach(() => {
-    changePassword.mockReset();
+    changePassword.mockReset(); logout.mockReset();
     TestBed.configureTestingModule({ providers: [
       provideRouter([]),
-      { provide: AuthService, useValue: { currentUser: () => ({ id: 7, login: 'ana@email.com', authorities: ['ROLE_USER'] }), changePassword } },
+      { provide: AuthService, useValue: { currentUser: () => ({ id: 7, login: 'ana@email.com', authorities: ['ROLE_USER'] }), changePassword, logout } },
     ] });
   });
 
@@ -72,5 +73,12 @@ describe('MyAccountPage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Senha inválida.');
     expect(fixture.nativeElement.textContent).toContain('ana@email.com');
+  });
+
+  it('ends the session from the dedicated session section', () => {
+    const fixture = TestBed.createComponent(MyAccountPage);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.account-action--logout') as HTMLButtonElement).click();
+    expect(logout).toHaveBeenCalledOnce();
   });
 });

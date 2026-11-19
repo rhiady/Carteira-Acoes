@@ -28,8 +28,11 @@ describe('LoginPage', () => {
   it('shows understandable validation and toggles password visibility', () => {
     (fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Informe seu login.');
+    expect(fixture.nativeElement.querySelector('label[for="login-identifier"]')?.textContent).toBe('Email');
+    expect((fixture.nativeElement.querySelector('#login-identifier') as HTMLInputElement).type).toBe('email');
+    expect(fixture.nativeElement.textContent).toContain('Informe seu email.');
     expect(fixture.nativeElement.textContent).toContain('Informe sua senha.');
+    expect(fixture.nativeElement.querySelector('#login-identifier')?.getAttribute('aria-describedby')).toBe('login-login-error');
 
     (fixture.nativeElement.querySelector('.password-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -84,6 +87,19 @@ describe('LoginPage', () => {
 
     expect(auth.login).toHaveBeenCalledWith({ login: 'admin@carteira.local', password: 'senha-segura' });
     expect(navigateByUrl).toHaveBeenCalledWith('/admin');
+  });
+
+  it('routes a common user directly to the financial home', () => {
+    const auth = TestBed.inject(AuthService);
+    vi.spyOn(auth, 'login').mockReturnValue(of({ id: 2, login: 'ana@email.com', authorities: ['ROLE_USER'] }));
+    const navigateByUrl = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const login = fixture.nativeElement.querySelector('#login-identifier') as HTMLInputElement;
+    const password = fixture.nativeElement.querySelector('#login-password') as HTMLInputElement;
+    login.value = 'ana@email.com'; login.dispatchEvent(new Event('input'));
+    password.value = 'senha-segura'; password.dispatchEvent(new Event('input'));
+    (fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+
+    expect(navigateByUrl).toHaveBeenCalledWith('/inicio');
   });
 
   it('declares deterministic Material and native CTA states', () => {
