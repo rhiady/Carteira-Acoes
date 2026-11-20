@@ -70,6 +70,19 @@ class AuthControllerIntegrationTest {
   }
 
   @Test
+  void logsInWithUsernameAlias() throws Exception {
+    criarUsuario();
+
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType("application/json")
+                .content("{\"username\":\"ana@email.com\",\"password\":\"senha123\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.token").isString());
+  }
+
+  @Test
   void authenticatesMeFromBearerToken() throws Exception {
     criarUsuario();
     Long usuarioId = usuarios.findByEmail("ana@email.com").orElseThrow().getId();
