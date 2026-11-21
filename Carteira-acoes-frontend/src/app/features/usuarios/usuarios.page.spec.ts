@@ -33,6 +33,12 @@ describe('UsuariosPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Ana Silva');
   });
 
+  it('shows the empty state when the published listing has no users', () => {
+    service.list.mockReturnValueOnce(of({ ...page, content: [], totalElements: 0, numberOfElements: 0, empty: true }));
+    const fixture: ComponentFixture<UsuariosPage> = TestBed.createComponent(UsuariosPage); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Cadastre um usuário para criar uma carteira.');
+  });
+
   it('has no detectable accessibility violations for the user listing', async () => {
     const fixture: ComponentFixture<UsuariosPage> = TestBed.createComponent(UsuariosPage); fixture.detectChanges();
     expect((await axe.run(fixture.nativeElement, { rules: { 'color-contrast': { enabled: false } } })).violations).toEqual([]);

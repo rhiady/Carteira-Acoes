@@ -2,6 +2,8 @@ package com.carteiraacoesbackend.facades;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.carteiraacoesbackend.clients.BrasilApiClient;
 import com.carteiraacoesbackend.dto.integrations.BrasilApiCepResponse;
@@ -11,6 +13,44 @@ import com.carteiraacoesbackend.exceptions.ApiException;
 import org.junit.jupiter.api.Test;
 
 class CvmFacadeTest {
+
+  @Test
+  void usesOfficialCvmFallbackWhenBrasilApiIsUnavailable() {
+    CvmDataFacade fallback = mock(CvmDataFacade.class);
+    when(fallback.consultarCorretora("12345678000190"))
+        .thenReturn(
+            new BrasilApiCvmBrokerResponse("12345678000190", "12345", "EM FUNCIONAMENTO NORMAL"));
+    CvmFacade facade =
+        new CvmFacade(
+            new BrasilApiClient() {
+              @Override
+              public BrasilApiCnpjResponse consultarCnpj(String cnpj) {
+                throw new UnsupportedOperationException();
+              }
+
+              @Override
+              public BrasilApiCepResponse consultarCep(String cep) {
+                throw new UnsupportedOperationException();
+              }
+
+              @Override
+              public java.util.List<BrasilApiCvmBrokerResponse> listarCorretorasCvm() {
+                throw new UnsupportedOperationException();
+              }
+
+              @Override
+              public BrasilApiCvmBrokerResponse consultarCorretoraCvm(String cnpj) {
+                throw ApiException.external(
+                    org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                    "EXTERNAL_API_UNAVAILABLE",
+                    "Indisponível");
+              }
+            },
+            fallback,
+            new com.carteiraacoesbackend.integrations.ExternalCallLogger());
+
+    assertEquals("12345", facade.consultarCorretora("12345678000190").codigoCvm());
+  }
 
   @Test
   void acceptsActiveBrokerWithFormattedCnpj() {

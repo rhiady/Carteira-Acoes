@@ -4,14 +4,55 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.carteiraacoesbackend.clients.BrasilApiClient;
+import com.carteiraacoesbackend.clients.CnpjWsClient;
 import com.carteiraacoesbackend.dto.integrations.BrasilApiCepResponse;
 import com.carteiraacoesbackend.dto.integrations.BrasilApiCnpjResponse;
 import com.carteiraacoesbackend.dto.integrations.BrasilApiCvmBrokerResponse;
+import com.carteiraacoesbackend.dto.integrations.CnpjWsResponse;
 import com.carteiraacoesbackend.exceptions.ApiException;
+import com.carteiraacoesbackend.integrations.ExternalCallLogger;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class CnpjFacadeTest {
+
+  @Test
+  void usesFallbackWhenBrasilApiIsUnavailable() {
+    CnpjWsClient fallback =
+        cnpj ->
+            new CnpjWsResponse(
+                "Empresa Fallback",
+                new CnpjWsResponse.Estabelecimento(
+                    "Fallback",
+                    "contato@empresa.com",
+                    "11999999999",
+                    "ATIVA",
+                    "01001000",
+                    "Rua",
+                    "1",
+                    null,
+                    "Centro",
+                    new CnpjWsResponse.Cidade("São Paulo"),
+                    new CnpjWsResponse.Estado("SP")));
+    CnpjFacade facade =
+        new CnpjFacade(
+            new FakeBrasilApiClient() {
+              @Override
+              public BrasilApiCnpjResponse consultarCnpj(String cnpj) {
+                throw ApiException.external(
+                    org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                    "EXTERNAL_API_UNAVAILABLE",
+                    "Indisponível");
+              }
+            },
+            fallback,
+            new ExternalCallLogger());
+
+    BrasilApiCnpjResponse response = facade.consultar("12345678000190");
+
+    assertEquals("Empresa Fallback", response.razaoSocial());
+    assertEquals("São Paulo", response.cidade());
+  }
 
   @Test
   void normalizesCnpjBeforeCallingClient() {

@@ -10,9 +10,10 @@ describe('application routes', () => {
     expect(routes.find((route) => route.path === 'usuario')?.redirectTo).toBe('minha-conta');
     expect(routes.find((route) => route.path === 'dashboard')?.canActivate).toBeUndefined();
     expect(routes.find((route) => route.path === 'usuario')?.canActivate).toBeUndefined();
-    expect(routes.find((route) => route.path === 'admin')?.canActivate).toEqual([authGuard, roleGuard]);
-    expect(routes.find((route) => route.path === 'admin')?.data).toEqual({ role: 'ROLE_ADMIN' });
+    expect(routes.find((route) => route.path === 'admin')?.redirectTo).toBe('usuarios');
+    expect(routes.find((route) => route.path === 'admin')?.pathMatch).toBe('full');
     expect(routes.find((route) => route.path === 'minha-conta')?.data).toEqual({ role: 'ROLE_USER' });
+    expect(routes.find((route) => route.path === 'usuarios')?.canActivate).toEqual([authGuard, roleGuard]);
     expect(routes.find((route) => route.path === 'usuarios')?.data).toEqual({ role: 'ROLE_ADMIN' });
     expect(routes.find((route) => route.path === 'corretoras')?.data).toEqual({ role: 'ROLE_ADMIN' });
   });

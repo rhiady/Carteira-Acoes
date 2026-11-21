@@ -10,15 +10,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class CvmFacade {
   private final BrasilApiClient client;
+  private final CvmDataFacade fallback;
   private final ExternalCallLogger externalCallLogger;
 
   public CvmFacade(BrasilApiClient client) {
-    this(client, new ExternalCallLogger());
+    this(client, null, new ExternalCallLogger());
   }
 
   @Autowired
-  public CvmFacade(BrasilApiClient client, ExternalCallLogger externalCallLogger) {
+  public CvmFacade(
+      BrasilApiClient client, CvmDataFacade fallback, ExternalCallLogger externalCallLogger) {
     this.client = client;
+    this.fallback = fallback;
     this.externalCallLogger = externalCallLogger;
   }
 
@@ -36,13 +39,22 @@ public class CvmFacade {
       return validarRegistro(corretora, normalizado);
     } catch (ApiException exception) {
       if ("EXTERNAL_RESOURCE_NOT_FOUND".equals(exception.getCode())) throw naoRegistrada();
+      if (fallback != null && falhaExterna(exception))
+        return validarRegistro(fallback.consultarCorretora(normalizado), normalizado);
       throw exception;
     } catch (Exception exception) {
+      if (fallback != null)
+        return validarRegistro(fallback.consultarCorretora(normalizado), normalizado);
       throw ApiException.external(
           org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
           "EXTERNAL_API_UNAVAILABLE",
           "Não foi possível consultar o cadastro da CVM.");
     }
+  }
+
+  private boolean falhaExterna(ApiException exception) {
+    return exception.getStatus().is5xxServerError()
+        || "EXTERNAL_API_ERROR".equals(exception.getCode());
   }
 
   private BrasilApiCvmBrokerResponse validarRegistro(

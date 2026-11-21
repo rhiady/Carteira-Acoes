@@ -5,7 +5,7 @@ export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/login/login.page').then((m) => m.LoginPage) },
   { path: 'cadastro', loadComponent: () => import('./features/cadastro/cadastro.page').then((m) => m.CadastroPage) },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
-  { path: 'admin', canActivate: [authGuard, roleGuard], data: { role: 'ROLE_ADMIN' }, loadComponent: () => import('./features/acesso/admin.page').then((m) => m.AdminPage) },
+  { path: 'admin', redirectTo: 'usuarios', pathMatch: 'full' },
   { path: 'usuario', redirectTo: 'minha-conta', pathMatch: 'full' },
   { path: 'minha-conta', canActivate: [authGuard, roleGuard], data: { role: 'ROLE_USER' }, loadComponent: () => import('./features/acesso/my-account.page').then((m) => m.MyAccountPage) },
   { path: 'acesso-negado', canActivate: [authGuard], loadComponent: () => import('./features/acesso/access-denied.page').then((m) => m.AccessDeniedPage) },
