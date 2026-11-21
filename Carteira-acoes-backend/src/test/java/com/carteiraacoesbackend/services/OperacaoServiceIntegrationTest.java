@@ -270,81 +270,13 @@ class OperacaoServiceIntegrationTest {
   }
 
   @Test
-  void createsStockAndPositionWhenBuyingWithTickerAndMarket() {
-    var compra =
-        service.comprar(
-            new CompraRequest(
-                carteira.getId(),
-                null,
-                "novo3",
-                Mercado.BRASIL,
-                new BigDecimal("3"),
-                new BigDecimal("12.50"),
-                null,
-                null,
-                null));
-
-    Acao acaoCriada = acoes.findById(compra.acaoId()).orElseThrow();
-    CarteiraAcao posicao =
-        posicoes.findByCarteiraIdAndAcaoId(carteira.getId(), acaoCriada.getId()).orElseThrow();
-    assertThat(acaoCriada.getTicker()).isEqualTo("NOVO3");
-    assertThat(acaoCriada.getNomeEmpresa()).isEqualTo("Empresa de teste");
-    assertThat(acaoCriada.getCotacaoAtual()).isEqualByComparingTo("10.00");
-    assertThat(posicao.getQuantidade()).isEqualByComparingTo("3");
-    assertThat(operacoes.count()).isEqualTo(1);
-    assertThat(
-            historicos.findByAcaoId(
-                acaoCriada.getId(), org.springframework.data.domain.Pageable.unpaged()))
-        .hasSize(1);
-    verify(cotacaoAdapter).consultar("NOVO3", Mercado.BRASIL);
-  }
-
-  @Test
-  void reusesStockByTickerAndChangesOnlyTheRequestedPortfolio() {
-    Acao existente = acoes.save(acaoNova("REUSE3"));
-
-    service.comprar(
-        new CompraRequest(
-            carteira.getId(),
-            null,
-            "reuse3",
-            Mercado.BRASIL,
-            BigDecimal.ONE,
-            new BigDecimal("10"),
-            null,
-            null,
-            null));
-
-    assertThat(acoes.findByTickerIgnoreCase("REUSE3")).map(Acao::getId).contains(existente.getId());
-    assertThat(posicoes.findByCarteiraIdAndAcaoId(carteira.getId(), existente.getId())).isPresent();
-  }
-
-  @Test
-  void rejectsInvalidStockIdentifiersWithoutPersistingAnything() {
+  void rejectsMissingActionIdWithoutPersistingAnything() {
     assertThatThrownBy(
             () ->
                 service.comprar(
                     new CompraRequest(
                         carteira.getId(),
                         null,
-                        null,
-                        null,
-                        BigDecimal.ONE,
-                        new BigDecimal("10"),
-                        null,
-                        null,
-                        null)))
-        .isInstanceOf(ApiException.class)
-        .extracting("code")
-        .isEqualTo("IDENTIFICACAO_ACAO_INVALIDA");
-    assertThatThrownBy(
-            () ->
-                service.comprar(
-                    new CompraRequest(
-                        carteira.getId(),
-                        acao.getId(),
-                        "TEST3",
-                        Mercado.BRASIL,
                         BigDecimal.ONE,
                         new BigDecimal("10"),
                         null,
@@ -358,33 +290,23 @@ class OperacaoServiceIntegrationTest {
   }
 
   @Test
-  void rollsBackNewStockWhenItsMarketLookupFails() {
-    when(cotacaoAdapter.consultar(any(), any()))
-        .thenThrow(
-            new ApiException(
-                org.springframework.http.HttpStatus.NOT_FOUND,
-                "TICKER_NAO_ENCONTRADO",
-                "não encontrado"));
-
+  void rejectsUnknownActionWithoutPersistingAnything() {
     assertThatThrownBy(
             () ->
                 service.comprar(
                     new CompraRequest(
                         carteira.getId(),
-                        null,
-                        "INVALID",
-                        Mercado.BRASIL,
+                        999_999L,
                         BigDecimal.ONE,
                         new BigDecimal("10"),
                         null,
                         null,
                         null)))
-        .isInstanceOf(ApiException.class);
-
-    assertThat(acoes.findByTickerIgnoreCase("INVALID")).isEmpty();
-    assertThat(historicos.count()).isZero();
-    assertThat(posicoes.count()).isZero();
+        .isInstanceOf(ApiException.class)
+        .extracting("code")
+        .isEqualTo("ACAO_NAO_ENCONTRADA");
     assertThat(operacoes.count()).isZero();
+    assertThat(posicoes.count()).isZero();
   }
 
   @Test
@@ -448,17 +370,6 @@ class OperacaoServiceIntegrationTest {
     } catch (org.springframework.dao.OptimisticLockingFailureException exception) {
       return false;
     }
-  }
-
-  private Acao acaoNova(String ticker) {
-    Acao nova = new Acao();
-    nova.setTicker(ticker);
-    nova.setNomeEmpresa("Teste");
-    nova.setMercado(Mercado.BRASIL);
-    nova.setMoeda(Moeda.BRL);
-    nova.setCotacaoAtual(BigDecimal.TEN);
-    nova.setDataHoraCotacao(java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC));
-    return nova;
   }
 
   private Corretora criarCorretora() {

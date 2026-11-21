@@ -16,7 +16,7 @@ O sistema SHALL tornar evidente onde o usuário está, qual informação é prin
 
 ### Requirement: Layout usa espaço e densidade de forma consistente
 
-O sistema SHALL usar uma escala coerente de espaçamento, containers adequados ao tipo de tela, tipografia hierárquica e agrupamentos que reduzam cards, bordas e caixas redundantes sem comprimir conteúdo financeiro. A compra SHALL organizar referência do ativo, ordem, custos opcionais, total estimado e confirmação como uma sequência financeira escaneável, com uma única ação primária visualmente dominante e sem superfícies decorativas redundantes.
+O sistema SHALL usar uma escala coerente de espaçamento, containers adequados ao tipo de tela, tipografia hierárquica e agrupamentos que reduzam cards, bordas e caixas redundantes sem comprimir conteúdo financeiro. A compra SHALL organizar referência do ativo, ordem, custos opcionais, total estimado e confirmação como uma sequência financeira escaneável, com uma única ação primária visualmente dominante e sem superfícies decorativas redundantes. A listagem de carteiras SHALL privilegiar leitura financeira e continuidade da tarefa, exibindo dados reais por moeda em regiões proporcionais, sem repetir identificadores técnicos como elemento dominante.
 
 #### Scenario: Dashboard em desktop
 - **WHEN** o dashboard é exibido em viewport amplo
@@ -29,6 +29,10 @@ O sistema SHALL usar uma escala coerente de espaçamento, containers adequados a
 #### Scenario: Compra em mobile
 - **WHEN** uma pessoa abre a compra em viewport estreito
 - **THEN** as mesmas regiões se organizam em uma única sequência vertical sem sobreposição, corte ou rolagem horizontal
+
+#### Scenario: Carteiras em viewport estreito
+- **WHEN** uma pessoa consulta suas carteiras em viewport estreito
+- **THEN** nome, valores por moeda, resultados, ativos e ação para abrir a carteira permanecem em ordem de leitura e sem rolagem horizontal
 
 ### Requirement: Navegação e tabelas são escaneáveis
 

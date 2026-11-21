@@ -47,7 +47,7 @@ export interface Operacao {
   dataHora: string;
   createdAt: string;
 }
-export interface CompraRequest { carteiraId: number; acaoId?: number; ticker?: string; mercado?: Mercado; quantidade: number; precoUnitario?: number; corretagem?: number; impostos?: number; valorAdicional?: number; }
+export interface CompraRequest { carteiraId: number; acaoId: number; quantidade: number; precoUnitario?: number; corretagem?: number; impostos?: number; valorAdicional?: number; }
 export interface VendaRequest { carteiraId: number; acaoId: number; quantidade: number; corretagem?: number; impostos?: number; valorAdicional?: number; }
 export interface PageParams { page?: number; size?: number; sort?: string | readonly string[]; }
 export const DEFAULT_PAGE_PARAMS: Required<PageParams> = { page: 0, size: 20, sort: 'id,desc' };

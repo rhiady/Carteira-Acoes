@@ -12,6 +12,7 @@ export class AdminPage {
   protected readonly identity = this.auth.currentUser()?.login ?? 'Sessão autenticada';
   protected readonly links: readonly RoleEntryLink[] = [
     { label: 'Usuários', path: '/usuarios', primary: true },
+    { label: 'Carteiras', path: '/carteiras' },
     { label: 'Corretoras', path: '/corretoras' },
     { label: 'Ações', path: '/acoes' },
   ];

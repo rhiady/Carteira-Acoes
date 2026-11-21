@@ -364,7 +364,7 @@ class AcaoServiceCotacaoTest {
   }
 
   private AcaoResponse criarAcao(String ticker) {
-    return new AcaoMapper().toResponse(service.resolverOuCriar(ticker, Mercado.BRASIL));
+    return service.criar(new AcaoRequest(ticker, Mercado.BRASIL));
   }
 
   private static final class StubCotacaoAdapter implements CotacaoAdapter {

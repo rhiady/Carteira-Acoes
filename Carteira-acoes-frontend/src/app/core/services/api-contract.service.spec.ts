@@ -48,7 +48,10 @@ describe('API service contract', () => {
   it('uses POST for quote refresh and both trading commands', () => {
     acao.updateQuote(7).subscribe(); operacao.buy({ carteiraId: 1, acaoId: 2, quantidade: 1 }).subscribe(); operacao.sell({ carteiraId: 1, acaoId: 2, quantidade: 1 }).subscribe();
     const quoteRequest = http.expectOne('/api/acoes/7/cotacao');
-    expect(quoteRequest.request.method).toBe('POST'); quoteRequest.flush({}); http.expectOne('/api/operacoes/compras').flush({}); http.expectOne('/api/operacoes/vendas').flush({});
+    expect(quoteRequest.request.method).toBe('POST'); quoteRequest.flush({});
+    const purchaseRequest = http.expectOne('/api/operacoes/compras');
+    expect(purchaseRequest.request.method).toBe('POST'); expect(purchaseRequest.request.body).toEqual({ carteiraId: 1, acaoId: 2, quantidade: 1 }); expect(purchaseRequest.request.body).not.toHaveProperty('ticker'); expect(purchaseRequest.request.body).not.toHaveProperty('mercado'); purchaseRequest.flush({});
+    http.expectOne('/api/operacoes/vendas').flush({});
   });
   it('uses the published analytics, history and global refresh contracts', () => {
     carteira.summary(3).subscribe(); carteira.positions(3).subscribe(); acao.history(7, { inicio: '2026-09-01T00:00:00Z' }).subscribe(); acao.updateAllQuotes().subscribe();

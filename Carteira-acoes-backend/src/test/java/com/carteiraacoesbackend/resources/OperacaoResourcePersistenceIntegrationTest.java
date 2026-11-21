@@ -16,6 +16,8 @@ import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Mercado;
 import com.carteiraacoesbackend.domains.enums.Moeda;
 import com.carteiraacoesbackend.domains.enums.Papel;
+import com.carteiraacoesbackend.integrations.Cotacao;
+import com.carteiraacoesbackend.integrations.CotacaoAdapter;
 import com.carteiraacoesbackend.repositories.AcaoRepository;
 import com.carteiraacoesbackend.repositories.CarteiraAcaoRepository;
 import com.carteiraacoesbackend.repositories.CarteiraRepository;
@@ -33,10 +35,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureMockMvc
@@ -52,6 +57,7 @@ class OperacaoResourcePersistenceIntegrationTest {
   @Autowired private CarteiraRepository carteiras;
   @Autowired private CorretoraRepository corretoras;
   @Autowired private UsuarioRepository usuarios;
+  @MockitoBean private CotacaoAdapter cotacaoAdapter;
 
   private Carteira carteira;
   private Acao acao;
@@ -306,6 +312,96 @@ class OperacaoResourcePersistenceIntegrationTest {
 
     assertThat(operacoes.count()).isZero();
     assertThat(posicoes.count()).isZero();
+  }
+
+  @Test
+  void userCanBuyCatalogActionButCannotCreateOrReferenceTicker() throws Exception {
+    Usuario admin = new Usuario();
+    admin.setNome("Administrador");
+    admin.setEmail("admin-operacoes-" + System.nanoTime() + "@test.com");
+    admin.setSenha(passwordEncoder.encode("senha"));
+    admin.setPapel(Papel.ADMIN);
+    usuarios.save(admin);
+    when(cotacaoAdapter.consultar(any(), any()))
+        .thenReturn(new Cotacao(new BigDecimal("22.00"), OffsetDateTime.now(ZoneOffset.UTC), "Vale S.A."));
+    MockMvc adminClient = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+    String adminResponse =
+        adminClient
+            .perform(
+                post("/api/auth/login")
+                    .contentType("application/json")
+                    .content("{\"login\":\"" + admin.getEmail() + "\",\"password\":\"senha\"}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String adminToken = adminResponse.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    RequestPostProcessor adminSession =
+        request -> {
+          request.addHeader("Authorization", "Bearer " + adminToken);
+          return request;
+        };
+    String catalogResponse =
+        adminClient
+            .perform(
+                post("/api/acoes")
+                    .with(adminSession)
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content("{\"ticker\":\"VALE3\",\"mercado\":\"BRASIL\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    long catalogAcaoId = Long.parseLong(catalogResponse.replaceAll(".*\"id\":(\\d+).*", "$1"));
+
+    mockMvc
+        .perform(
+            post("/api/acoes")
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"ticker\":\"ITUB4\",\"mercado\":\"BRASIL\"}"))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            post("/api/operacoes/compras")
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content(
+                    "{\"carteiraId\":%d,\"ticker\":\"VALE3\",\"mercado\":\"BRASIL\",\"quantidade\":1,\"precoUnitario\":22}"
+                        .formatted(carteira.getId())))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            post("/api/operacoes/compras")
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"carteiraId\":%d,\"quantidade\":1,\"precoUnitario\":22}".formatted(carteira.getId())))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            post("/api/operacoes/compras")
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content(
+                    "{\"carteiraId\":%d,\"acaoId\":999999,\"quantidade\":1,\"precoUnitario\":22}"
+                        .formatted(carteira.getId())))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            post("/api/operacoes/compras")
+                .with(session)
+                .with(csrf())
+                .contentType("application/json")
+                .content(
+                    "{\"carteiraId\":%d,\"acaoId\":%d,\"quantidade\":1,\"precoUnitario\":22}"
+                        .formatted(carteira.getId(), catalogAcaoId)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.acaoId").value(catalogAcaoId));
   }
 
   private Acao criarAcao(String ticker, String nomeEmpresa) {

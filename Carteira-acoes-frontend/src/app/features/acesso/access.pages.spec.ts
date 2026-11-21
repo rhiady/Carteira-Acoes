@@ -19,8 +19,9 @@ describe('role access pages', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Administração');
     expect(fixture.nativeElement.textContent).toContain('admin@carteira.local');
-    expect(fixture.nativeElement.querySelectorAll('a')).toHaveLength(3);
+    expect(fixture.nativeElement.querySelectorAll('a')).toHaveLength(4);
     expect(fixture.nativeElement.querySelector('a.role-entry__link--primary')?.getAttribute('href')).toBe('/usuarios');
+    expect(fixture.nativeElement.textContent).toContain('Carteiras');
     expect((await axe.run(fixture.nativeElement, { rules: { 'color-contrast': { enabled: false } } })).violations).toEqual([]);
   });
 });

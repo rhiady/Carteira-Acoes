@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "helvetica",
+        "createdAt": "2026-11-21T00:27:46.804Z",
+        "reason": "Existing Swiss financial visual system documented in the active change design and established global tokens."
+      }
+    ]
+  }
+}

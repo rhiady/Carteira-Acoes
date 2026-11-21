@@ -5,7 +5,7 @@
 Registrar compras e vendas como histórico imutável e manter a posição corrente de cada ação em uma carteira sempre consistente com esse histórico.
 ## Requirements
 ### Requirement: Registro de compra
-O sistema SHALL registrar uma compra somente para carteira existente quando a quantidade for no mínimo `0.0001`. A compra SHALL identificar uma ação existente por `acaoId` OU informar conjuntamente `ticker` e `mercado`; MUST rejeitar identificação ausente, combinação parcial de ticker/mercado ou as duas formas de identificação na mesma requisição. Quando `acaoId` for informado, a ação deverá existir. Quando ticker e mercado forem informados, o sistema SHALL reutilizar a ação correspondente se ela existir ou criá-la a partir do provedor de mercado, dentro da mesma transação da compra. Se o preço unitário for informado, SHALL usá-lo; se estiver ausente, SHALL obter cotação válida externamente. Corretagem, impostos e valor adicional serão custos opcionais. Uma compra bem-sucedida SHALL persistir a operação e criar ou aumentar somente a posição da ação na carteira informada, registrar os valores bruto e líquido calculados e responder HTTP 201 com o identificador da operação. Quando não puder ser persistida, a API SHALL retornar um erro padronizado que identifique a categoria da falha e MUST NOT retornar sucesso.
+O sistema SHALL registrar uma compra de usuário comum somente para carteira própria existente quando a quantidade for no mínimo `0.0001`. A compra de `ROLE_USER` MUST identificar exclusivamente uma ação global existente por `acaoId`; `ticker` e `mercado` MUST ser ausentes e MUST NOT localizar, reutilizar ou criar ações nesse fluxo. Uma `acaoId` inexistente, ausência de `acaoId` ou presença de ticker/mercado SHALL produzir erro de validação ou recurso não encontrado sem persistir ação, posição ou operação. Se o preço unitário for informado, SHALL usá-lo; se estiver ausente, SHALL obter cotação válida externamente. Corretagem, impostos e valor adicional serão custos opcionais. Uma compra bem-sucedida SHALL persistir a operação e criar ou aumentar somente a posição da ação na carteira informada, registrar os valores bruto e líquido calculados e responder HTTP 201 com o identificador da operação. Quando não puder ser persistida, a API SHALL retornar um erro padronizado que identifique a categoria da falha e MUST NOT retornar sucesso.
 
 #### Scenario: Compra de ação existente por identificador
 - **WHEN** um cliente compra quantidade positiva para uma carteira existente informando `acaoId` válido e preço unitário válido
@@ -16,24 +16,44 @@ O sistema SHALL registrar uma compra somente para carteira existente quando a qu
 - **THEN** o sistema registra a compra e aumenta a posição sem consultar cotação externa
 
 #### Scenario: Compra cria ação e posição
-- **WHEN** um cliente compra quantidade positiva para uma carteira existente informando ticker e mercado ainda não cadastrados
-- **THEN** o sistema importa a ação, cria sua posição naquela carteira e registra a compra na mesma transação
+- **WHEN** uma compra informa ticker e mercado de ação ainda não cadastrada
+- **THEN** o sistema rejeita a requisição e não cria ação, posição ou operação
 
 #### Scenario: Compra reutiliza ação por ticker
-- **WHEN** um cliente compra informando ticker e mercado de uma ação já cadastrada
-- **THEN** o sistema reutiliza a ação existente e altera somente a posição da carteira informada
+- **WHEN** uma compra informa ticker e mercado de ação já cadastrada
+- **THEN** o sistema rejeita a requisição e não altera a posição da carteira
 
 #### Scenario: Compra persistida pela API
-- **WHEN** um cliente envia uma compra válida para `POST /operacoes/compras`
+- **WHEN** um cliente envia uma compra válida para `POST /operacoes/compras` com `acaoId` existente
 - **THEN** a API responde HTTP 201 com o identificador da operação, e a operação e a posição correspondente podem ser consultadas após a resposta
 
 #### Scenario: Identificação de ação inválida
-- **WHEN** uma compra informa `acaoId` junto com ticker/mercado, omite todos esses campos ou informa apenas um entre ticker e mercado
+- **WHEN** uma compra omite `acaoId` ou informa ticker ou mercado
 - **THEN** o sistema responde com erro de validação e não persiste ação, posição ou operação
 
 #### Scenario: Compra sem preço e cotação indisponível
 - **WHEN** uma compra ocorre sem preço e a cotação não pode ser obtida
 - **THEN** a API retorna erro padronizado de indisponibilidade e não registra operação nem altera a posição
+
+#### Scenario: Compra de ação disponibilizada por identificador
+- **WHEN** um usuário comum compra quantidade positiva para carteira própria informando `acaoId` existente e preço unitário válido
+- **THEN** o sistema registra a compra e aumenta somente a posição daquela carteira sem consultar cotação externa
+
+#### Scenario: Compra usa cotação quando não há preço manual
+- **WHEN** um usuário comum compra quantidade positiva de uma ação existente sem informar preço unitário e a cotação é válida
+- **THEN** o sistema registra a operação usando a cotação e aumenta somente a posição da carteira própria
+
+#### Scenario: Compra com preço manual
+- **WHEN** um usuário comum compra quantidade positiva de uma ação existente com preço unitário válido
+- **THEN** o sistema registra e preserva o preço informado sem consultar cotação externa
+
+#### Scenario: Usuário comum tenta criar ou referenciar ação por ticker
+- **WHEN** um usuário comum envia compra com ticker e mercado, com ou sem `acaoId`
+- **THEN** o sistema rejeita a requisição e não persiste ação, posição ou operação
+
+#### Scenario: Ação inexistente
+- **WHEN** um usuário comum envia compra com `acaoId` que não existe
+- **THEN** o sistema responde com erro padronizado e não persiste posição ou operação
 
 ### Requirement: Registro de venda
 O sistema SHALL registrar uma venda somente para posição existente cuja quantidade seja suficiente e quando a quantidade for no mínimo `0.0001`. A venda SHALL requerer `carteiraId`, `acaoId` e quantidade; `precoUnitario`, corretagem, impostos e valor adicional serão campos opcionais. Quando `precoUnitario` for informado, ele MUST ser no mínimo `0.0001` e o sistema SHALL usá-lo para registrar a venda sem consultar cotação externa. Quando estiver ausente, o sistema SHALL obter uma cotação externa válida. Uma venda bem-sucedida SHALL persistir a operação, reduzir a posição sem removê-la — inclusive quando resultar em quantidade zero — e responder HTTP 201 com o identificador da operação. Quando não puder ser persistida, a API SHALL retornar um erro padronizado que identifique a categoria da falha e MUST NOT retornar sucesso.

@@ -94,15 +94,6 @@ public class AcaoService {
   }
 
   @Transactional
-  public Acao resolverOuCriar(
-      String ticker, com.carteiraacoesbackend.domains.enums.Mercado mercado) {
-    String tickerNormalizado = normalizarTicker(ticker, mercado);
-    return repository
-        .findByTickerIgnoreCase(tickerNormalizado)
-        .orElseGet(() -> criarEntidade(tickerNormalizado, mercado));
-  }
-
-  @Transactional
   public AcaoResponse criar(AcaoRequest request) {
     String ticker = normalizarTicker(request.ticker(), request.mercado());
     return paraResposta(criarEntidade(ticker, request.mercado()));
@@ -124,7 +115,7 @@ public class AcaoService {
         mercado == com.carteiraacoesbackend.domains.enums.Mercado.BRASIL ? Moeda.BRL : Moeda.USD);
     acao.setCotacaoAtual(cotacao.preco());
     acao.setDataHoraCotacao(cotacao.dataHora().withOffsetSameInstant(ZoneOffset.UTC));
-    // Força a verificação da unicidade do ticker antes de a compra criar posição ou operação.
+    // Força a verificação da unicidade do ticker antes de publicar a ação no catálogo.
     Acao salva = repository.saveAndFlush(acao);
     atualizacaoService.registrarHistorico(salva, cotacao);
     return salva;

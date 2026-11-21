@@ -32,10 +32,10 @@ interface TickerPreview {
         <div class="portfolio-card-grid">
           @for (item of page()!.content; track item.id) {
             <article class="portfolio-summary-card">
-              <div class="portfolio-summary-card__header"><div><h2>{{ item.nome }}</h2><p>Corretora #{{ item.corretoraId }}</p></div><span class="portfolio-summary-card__id">Carteira #{{ item.id }}</span></div>
+              <div class="portfolio-summary-card__header"><h2>{{ item.nome }}</h2></div>
               <div class="portfolio-summary-card__content">
                 @if (summaries().get(item.id); as summary) {
-                  @for (subtotal of summary.resumosPorMoeda; track subtotal.moeda) { <div class="portfolio-summary-card__metric"><span>Valor atual · {{ subtotal.moeda }}</span><strong>{{ money(subtotal.valorAtual, subtotal.moeda) }}</strong><small [class]="resultClass(subtotal.lucroPrejuizo)">Lucro / prejuízo: {{ signedMoney(subtotal.lucroPrejuizo, subtotal.moeda) }}</small></div> }
+                  <div class="portfolio-summary-card__financials">@for (subtotal of summary.resumosPorMoeda; track subtotal.moeda) { <div class="portfolio-summary-card__metric"><span>Valor atual · {{ subtotal.moeda }}</span><strong>{{ money(subtotal.valorAtual, subtotal.moeda) }}</strong><small [class]="resultClass(subtotal.lucroPrejuizo)">Lucro / prejuízo: {{ signedMoney(subtotal.lucroPrejuizo, subtotal.moeda) }}</small></div> }</div>
                   <p class="portfolio-summary-card__assets">{{ summary.quantidadeAtivos }} ativo{{ summary.quantidadeAtivos === 1 ? '' : 's' }}</p>
                 } @else { <p>Resumo financeiro indisponível.</p> }
                 @if (tickerPreviews().get(item.id); as preview) {

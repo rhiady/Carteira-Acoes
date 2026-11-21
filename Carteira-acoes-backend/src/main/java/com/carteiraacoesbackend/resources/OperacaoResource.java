@@ -48,7 +48,7 @@ public class OperacaoResource {
         content = @Content(schema = @Schema(implementation = ErroResponse.class))),
     @ApiResponse(
         responseCode = "404",
-        description = "Carteira, ação ou ticker não encontrado",
+        description = "Carteira ou ação não encontrada",
         content = @Content(schema = @Schema(implementation = ErroResponse.class))),
     @ApiResponse(
         responseCode = "409",

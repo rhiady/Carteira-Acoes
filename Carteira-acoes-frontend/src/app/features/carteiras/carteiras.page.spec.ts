@@ -33,5 +33,22 @@ describe('CarteirasPage', () => {
     expect(service.positions).toHaveBeenCalledWith(1, { page: 0, size: 3, sort: 'ticker,asc' });
     expect(fixture.nativeElement.querySelector('.ticker-preview')?.textContent).toContain('PETR4');
     expect(fixture.nativeElement.querySelector('.ticker-preview')?.textContent).toContain('+2 outros');
+    expect(fixture.nativeElement.querySelector('.portfolio-summary-card__financials')?.textContent).toContain('R$');
+    expect(fixture.nativeElement.textContent).not.toContain('Corretora #');
+    expect(fixture.nativeElement.textContent).not.toContain('Carteira #');
+  });
+
+  it('keeps authoritative wallet values separated by currency', () => {
+    service.summary.mockReturnValueOnce(of({ carteiraId: 1, nome: 'Longo prazo', quantidadeAtivos: 5, resumosPorMoeda: [
+      { moeda: 'BRL', valorAtual: 100, lucroPrejuizo: 10 }, { moeda: 'USD', valorAtual: 20, lucroPrejuizo: -2 },
+    ] }));
+    const fixture: ComponentFixture<CarteirasPage> = TestBed.createComponent(CarteirasPage);
+    fixture.detectChanges();
+
+    const metrics = fixture.nativeElement.querySelector('.portfolio-summary-card__financials')?.textContent;
+    expect(metrics).toContain('BRL');
+    expect(metrics).toContain('USD');
+    expect(metrics).toContain('R$');
+    expect(metrics).toContain('US$');
   });
 });

@@ -1,6 +1,6 @@
 # Carteira de Ações — Backend
 
-API REST para cadastrar usuários, carteiras e corretoras, além de registrar compras e vendas. Uma ação nova é importada a partir do ticker durante uma compra; os dados cadastrais de uma corretora são importados pelo CNPJ e a corretora precisa constar na CVM.
+API REST para cadastrar usuários, carteiras e corretoras, além de registrar compras e vendas. Administradores importam ações pelo ticker para o catálogo; usuários registram compras apenas de ações já cadastradas. Os dados cadastrais de uma corretora são importados pelo CNPJ e a corretora precisa constar na CVM.
 
 ## Arquitetura e domínios
 
@@ -14,7 +14,7 @@ Cliente HTTP → Resource → Service → Repository → Banco de dados
 Domínios principais:
 
 - **Usuário e carteira:** um usuário pode ter carteiras para organizar as posições.
-- **Ação e cotação:** uma compra pode criar a ação pelo ticker e mercado; nome da empresa e preço são buscados externamente.
+- **Ação e cotação:** um administrador cadastra a ação pelo ticker e mercado; nome da empresa e preço são buscados externamente. Compras referenciam o identificador da ação cadastrada.
 - **Corretora:** o CNPJ identifica a instituição; razão social e endereço vêm da consulta cadastral e o registro é validado na CVM.
 - **Operação e posição:** compras e vendas atualizam o histórico e as posições da carteira.
 
@@ -160,7 +160,7 @@ POST /api/acoes
 {"ticker":"PETR4","mercado":"BRASIL"}
 ```
 
-No cadastro direto de ação, informe apenas ticker e mercado (`BRASIL` ou `EUA`). A API busca nome, cotação e moeda no provedor de mercado, cria o histórico inicial e responde `201 Created`; nenhuma compra ou posição é criada.
+Somente administradores podem cadastrar ação. Informe apenas ticker e mercado (`BRASIL` ou `EUA`): a API busca nome, cotação e moeda no provedor de mercado, cria o histórico inicial e responde `201 Created`; nenhuma compra ou posição é criada. Use o `id` retornado para registrar compras de usuários.
 
 ### Valores em BRL para ações dos EUA
 
@@ -172,16 +172,13 @@ Os equivalentes usam a cotação de venda USD/BRL mais recente publicada pela [P
 POST /api/operacoes/compras
 {"carteiraId":1,"acaoId":1,"quantidade":10,"precoUnitario":25.50,"corretagem":0,"impostos":0,"valorAdicional":0}
 
-POST /api/operacoes/compras
-{"carteiraId":1,"ticker":"PETR4","mercado":"BRASIL","quantidade":10,"precoUnitario":25.50,"corretagem":0,"impostos":0,"valorAdicional":0}
-
 POST /api/operacoes/vendas
 {"carteiraId":1,"acaoId":1,"quantidade":5,"precoUnitario":27.80,"corretagem":0,"impostos":0,"valorAdicional":0}
 ```
 
-Em uma compra, informe exatamente `acaoId` (para ação existente) ou o par `ticker` e `mercado` (para localizar ou criar uma ação). `mercado` aceita `BRASIL` ou `EUA`; não envie nome da empresa nem preço para criar a ação. Em uma venda, `precoUnitario` é opcional: quando informado, representa o preço efetivamente negociado; quando ausente, a API busca a cotação atual. Os campos numéricos de custo são opcionais quando o contrato os permite. A quantidade deve ser maior que zero; em compra ou venda, `precoUnitario`, quando informado, também deve ser maior que zero.
+Em uma compra, informe `acaoId` de uma ação já cadastrada pelo administrador. `ticker` e `mercado` não são aceitos nesse endpoint; cadastre o ativo primeiro em `POST /api/acoes`. Em compra ou venda, `precoUnitario` é opcional: quando informado, representa o preço efetivamente negociado; quando ausente, a API busca a cotação atual. Os campos numéricos de custo são opcionais quando o contrato os permite. A quantidade deve ser maior que zero; em compra ou venda, `precoUnitario`, quando informado, também deve ser maior que zero.
 
-Para uma operação com ação já cadastrada, envie somente `carteiraId`, `acaoId`, `quantidade` e, opcionalmente, `precoUnitario` e custos. Não envie `stockIdentifierValid`: esse campo é calculado internamente. `precoUnitario: 0` é inválido; use valor igual ou superior a `0.0001` ou omita o campo para usar a cotação externa.
+Para uma operação, envie somente `carteiraId`, `acaoId`, `quantidade` e, opcionalmente, `precoUnitario` e custos. `precoUnitario: 0` é inválido; use valor igual ou superior a `0.0001` ou omita o campo para usar a cotação externa. Uma `acaoId` ausente é erro de validação e uma inexistente retorna erro de recurso não encontrado.
 
 ### Erros
 
