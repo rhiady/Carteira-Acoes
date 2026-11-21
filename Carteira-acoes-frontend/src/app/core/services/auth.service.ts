@@ -3,7 +3,7 @@ import { Service, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, finalize, map, Observable, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
 import { apiConfig } from '../config/api.config';
-import { AuthenticatedUser, Authority, LoginRequest, LoginResponse, PasswordChangeRequest } from '../models/domain.models';
+import { AuthenticatedUser, Authority, LoginRequest, LoginResponse, PasswordChangeRequest, Usuario, UsuarioRequest } from '../models/domain.models';
 
 const TOKEN_KEY = 'authToken';
 const TOKEN_EXPIRY_KEY = 'authTokenExpiresAt';
@@ -35,6 +35,10 @@ export class AuthService {
 
   changePassword(request: PasswordChangeRequest): Observable<void> {
     return this.http.put<void>(apiConfig.endpoint('/auth/senha'), request);
+  }
+
+  register(request: UsuarioRequest): Observable<Usuario> {
+    return this.http.post<Usuario>(apiConfig.endpoint('/auth/cadastro'), request);
   }
 
   getToken(): string | null { return this.hasValidToken() ? this.token() : null; }

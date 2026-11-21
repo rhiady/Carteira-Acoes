@@ -32,6 +32,14 @@ describe('AuthService', () => {
     expect(sessionStorage.getItem('authToken')).not.toContain('segredo');
   });
 
+  it('registers a public account through the authentication endpoint', () => {
+    service.register({ nome: 'Ana', email: 'ana@email.com', senha: 'senha123' }).subscribe();
+    const request = httpTesting.expectOne('/api/auth/cadastro');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ nome: 'Ana', email: 'ana@email.com', senha: 'senha123' });
+    request.flush({ id: 4, nome: 'Ana', email: 'ana@email.com' });
+  });
+
   it('restores a valid token through /me after refresh', () => {
     sessionStorage.setItem('authToken', 'stored-token');
     sessionStorage.setItem('authTokenExpiresAt', String(Date.now() + 3600000));

@@ -47,7 +47,15 @@ The application SHALL allow creating a usuário with nome, valid email and senha
 - **THEN** the application sends only the CNPJ to `/corretoras`, disables duplicate submission while pending, and reports the backend outcome
 
 ### Requirement: Consultas de recursos disponíveis
-The application SHALL provide paginated listings and detail retrieval by identifier for usuários, corretoras, carteiras and ações. It SHALL provide corretora lookup by CNPJ, ação lookup by normalized ticker, carteiras for a usuário, and posições for a carteira through their published endpoints. When displaying a position that lacks stock details, it SHALL obtain the corresponding action by `acaoId` only for UI enrichment and shall not persist duplicated action data.
+The application SHALL provide paginated listings and detail retrieval by identifier for usuários, corretoras, carteiras and ações. An administrator SHALL retrieve the published user listing and MAY create or import a global action with `POST /acoes` using only `ticker` and `mercado`; this request MUST NOT include carteira, posição or operação data. It SHALL provide corretora lookup by CNPJ, ação lookup by normalized ticker, carteiras for a usuário, and posições for a carteira through their published endpoints. When displaying a position that lacks stock details, it SHALL obtain the corresponding action by `acaoId` only for UI enrichment and shall not persist duplicated action data.
+
+#### Scenario: Administrador consulta usuários
+- **WHEN** an authenticated administrator opens the user-management route
+- **THEN** the application requests the paginated published user listing and renders its users or an accessible loading, empty or error state
+
+#### Scenario: Administrador cadastra ação global
+- **WHEN** an administrator submits a valid ticker and mercado
+- **THEN** the application sends only `{ ticker, mercado }` to `POST /acoes`, confirms the returned global action and does not create a carteira, posição or operação
 
 #### Scenario: Carteira apresenta posições
 - **WHEN** the user opens a carteira detail
@@ -62,15 +70,27 @@ The application SHALL provide paginated listings and detail retrieval by identif
 - **THEN** the application trims and uppercases the ticker before requesting `/acoes/ticker/{ticker}` and does not issue a request for every keystroke
 
 ### Requirement: Compra cria ou reutiliza o ativo conforme o contrato
-The application SHALL submit purchases to `/operacoes/compras` with carteiraId and quantidade of at least `0.0001`. It MUST send exactly one asset reference: either acaoId, or ticker together with mercado `BRASIL` or `EUA`. It SHALL include precoUnitario only when it is at least `0.0001` and charges only when each supplied charge is non-negative. It MUST prevent submission without a carteira and MUST treat the returned `OperacaoResponse` amounts as official rather than any client estimate.
+The application SHALL submit purchases to `/operacoes/compras` with `carteiraId`, `acaoId` and `quantidade` of at least `0.0001`. It MUST obtain `acaoId` from a registered action returned by the published action listing and MUST NOT send `ticker` or `mercado` in a purchase request. It SHALL include `precoUnitario` only when it is at least `0.0001` and charges only when each supplied charge is non-negative. It MUST prevent submission without a carteira or registered action selection and MUST treat the returned `OperacaoResponse` amounts as official rather than any client estimate.
+
+#### Scenario: Compra de ação cadastrada
+- **WHEN** the user selects a registered action, a carteira and a valid quantidade
+- **THEN** the application submits the selected action's `acaoId` to the purchase endpoint and confirms the returned operation
 
 #### Scenario: Compra de ativo ainda inexistente
-- **WHEN** the user enters carteiraId, ticker, mercado and quantidade without acaoId
-- **THEN** the application submits that asset locator to the purchase endpoint and confirms the returned operation
+- **WHEN** the desired asset is not present in the published action listing
+- **THEN** the application does not offer a ticker/market fallback and prevents a purchase until the asset is registered
+
+#### Scenario: Compra sem ação selecionada
+- **WHEN** the user has not selected a registered action
+- **THEN** the application prevents submission and identifies that an action selection is required
+
+#### Scenario: Compra não envia referência legada
+- **WHEN** the application submits a purchase
+- **THEN** the request body contains `acaoId` and does not contain `ticker` or `mercado`
 
 #### Scenario: Compra possui referências de ativo conflitantes
-- **WHEN** the user provides acaoId together with ticker or mercado
-- **THEN** the application prevents submission and explains that only one asset reference is permitted
+- **WHEN** a purchase form is displayed
+- **THEN** it exposes one registered-action selection only, so the person cannot provide `acaoId` together with ticker or mercado
 
 #### Scenario: Compra concluída atualiza a carteira
 - **WHEN** a purchase returns `201 Created`
@@ -92,7 +112,11 @@ The application SHALL submit a sale to `/operacoes/vendas` with carteiraId, acao
 - **THEN** the application refreshes the carteira's positions and operation history and shows the successful operation feedback
 
 ### Requirement: Catálogo de ações não oferece cadastro direto
-The application SHALL list, detail and look up actions by ticker and request a quote refresh through `POST /acoes/{id}/cotacao`. It MUST prevent duplicate quote-refresh requests while one is pending and MUST NOT expose direct action creation, editing, or deletion commands because the API does not publish those operations.
+The application SHALL list, detail and look up actions by ticker and request a quote refresh through `POST /acoes/{id}/cotacao`. An administrator SHALL create or import a global action through `POST /acoes` with only `ticker` and `mercado`, and MUST prevent duplicate creation while that request is pending. This administrative action MUST NOT create a carteira, posição or operação. The application MUST NOT expose unsupported action-editing commands.
+
+#### Scenario: Ação global é cadastrada
+- **WHEN** an administrator provides a valid ticker and mercado
+- **THEN** the application sends `{ ticker, mercado }` to `POST /acoes` and confirms the returned global action without a financial operation
 
 #### Scenario: Cotação é atualizada
 - **WHEN** the user requests an available action's quote refresh

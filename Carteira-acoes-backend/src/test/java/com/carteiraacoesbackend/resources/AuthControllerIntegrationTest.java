@@ -70,6 +70,25 @@ class AuthControllerIntegrationTest {
   }
 
   @Test
+  void registersCommonUserWithoutAuthentication() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/auth/cadastro")
+                .contentType("application/json")
+                .content("{\"nome\":\"Ana Silva\",\"email\":\"ana@email.com\",\"senha\":\"senha123\"}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.login").value("ana@email.com"))
+        .andExpect(jsonPath("$.papel").value("USER"));
+
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType("application/json")
+                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
   void logsInWithUsernameAlias() throws Exception {
     criarUsuario();
 

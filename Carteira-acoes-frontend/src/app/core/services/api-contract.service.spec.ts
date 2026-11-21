@@ -38,20 +38,35 @@ describe('API service contract', () => {
     carteira.positions(3, { size: 10 }).subscribe(); operacao.history(3, { page: 1 }).subscribe();
     http.expectOne('/api/carteiras/3/acoes?page=0&size=10&sort=id,desc').flush(page); http.expectOne('/api/operacoes/carteiras/3?page=1&size=20&sort=dataHora,desc').flush(page);
   });
+  it('normalizes ticker casing returned by the API', () => {
+    const tickers: string[] = [];
+    acao.list().subscribe((response) => tickers.push(response.content[0].ticker));
+    carteira.positions(3).subscribe((response) => tickers.push(response.content[0].ticker));
+    operacao.history(3).subscribe((response) => tickers.push(response.content[0].ticker));
+    http.expectOne('/api/acoes?page=0&size=20&sort=id,desc').flush({ ...page, content: [{ ticker: 'petr4' }] });
+    http.expectOne('/api/carteiras/3/acoes?page=0&size=20&sort=id,desc').flush({ ...page, content: [{ ticker: 'vale3' }] });
+    http.expectOne('/api/operacoes/carteiras/3?page=0&size=20&sort=dataHora,desc').flush({ ...page, content: [{ ticker: 'itsa4' }] });
+    expect(tickers).toEqual(['PETR4', 'VALE3', 'ITSA4']);
+  });
   it('retrieves every position page for portfolio analytics', () => {
     const received: number[] = [];
     carteira.allPositions(3).subscribe((positions) => received.push(...positions.map((position) => position.acaoId)));
-    http.expectOne('/api/carteiras/3/acoes?page=0&size=100&sort=id,desc').flush({ ...page, content: [{ acaoId: 1 }], totalPages: 2, empty: false });
-    http.expectOne('/api/carteiras/3/acoes?page=1&size=100&sort=id,desc').flush({ ...page, content: [{ acaoId: 2 }], totalPages: 2, number: 1, empty: false });
+    http.expectOne('/api/carteiras/3/acoes?page=0&size=100&sort=id,desc').flush({ ...page, content: [{ acaoId: 1, ticker: 'petr4' }], totalPages: 2, empty: false });
+    http.expectOne('/api/carteiras/3/acoes?page=1&size=100&sort=id,desc').flush({ ...page, content: [{ acaoId: 2, ticker: 'vale3' }], totalPages: 2, number: 1, empty: false });
     expect(received).toEqual([1, 2]);
   });
   it('uses POST for quote refresh and both trading commands', () => {
     acao.updateQuote(7).subscribe(); operacao.buy({ carteiraId: 1, acaoId: 2, quantidade: 1 }).subscribe(); operacao.sell({ carteiraId: 1, acaoId: 2, quantidade: 1 }).subscribe();
     const quoteRequest = http.expectOne('/api/acoes/7/cotacao');
-    expect(quoteRequest.request.method).toBe('POST'); quoteRequest.flush({});
+    expect(quoteRequest.request.method).toBe('POST'); quoteRequest.flush({ ticker: 'PETR4' });
     const purchaseRequest = http.expectOne('/api/operacoes/compras');
-    expect(purchaseRequest.request.method).toBe('POST'); expect(purchaseRequest.request.body).toEqual({ carteiraId: 1, acaoId: 2, quantidade: 1 }); expect(purchaseRequest.request.body).not.toHaveProperty('ticker'); expect(purchaseRequest.request.body).not.toHaveProperty('mercado'); purchaseRequest.flush({});
-    http.expectOne('/api/operacoes/vendas').flush({});
+    expect(purchaseRequest.request.method).toBe('POST'); expect(purchaseRequest.request.body).toEqual({ carteiraId: 1, acaoId: 2, quantidade: 1 }); expect(purchaseRequest.request.body).not.toHaveProperty('ticker'); expect(purchaseRequest.request.body).not.toHaveProperty('mercado'); purchaseRequest.flush({ ticker: 'PETR4' });
+    http.expectOne('/api/operacoes/vendas').flush({ ticker: 'PETR4' });
+  });
+  it('creates a global action without financial-operation fields', () => {
+    acao.create({ ticker: 'PETR4', mercado: 'BRASIL' }).subscribe();
+    const request = http.expectOne('/api/acoes');
+    expect(request.request.method).toBe('POST'); expect(request.request.body).toEqual({ ticker: 'PETR4', mercado: 'BRASIL' }); expect(request.request.body).not.toHaveProperty('carteiraId'); expect(request.request.body).not.toHaveProperty('acaoId'); request.flush({ ticker: 'PETR4' });
   });
   it('uses the published analytics, history and global refresh contracts', () => {
     carteira.summary(3).subscribe(); carteira.positions(3).subscribe(); acao.history(7, { inicio: '2026-09-01T00:00:00Z' }).subscribe(); acao.updateAllQuotes().subscribe();

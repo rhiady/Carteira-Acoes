@@ -86,6 +86,8 @@ public class SecurityConfig {
                 authorize
                     .requestMatchers(HttpMethod.POST, "/api/auth/login")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/cadastro")
+                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/usuarios")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.PUT, "/api/usuarios/*/papel")

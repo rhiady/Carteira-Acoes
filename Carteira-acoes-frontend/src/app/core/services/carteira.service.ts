@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { apiConfig } from '../config/api.config';
+import { normalizeTickerPage } from '../mappers/ticker.mapper';
 import { Carteira, CarteiraRequest, CarteiraUpdateRequest, Page, Pageable, PosicaoAcao, ResumoCarteira } from '../models/domain.models';
 import { pageableParams } from './pageable';
 import { forkJoin, map, of, switchMap } from 'rxjs';
@@ -13,7 +14,7 @@ export class CarteiraService {
   create(request: CarteiraRequest) { return this.http.post<Carteira>(apiConfig.endpoint('/carteiras'), request); }
   update(id: number, request: CarteiraUpdateRequest) { return this.http.put<Carteira>(apiConfig.endpoint(`/carteiras/${id}`), request); }
   delete(id: number) { return this.http.delete<void>(apiConfig.endpoint(`/carteiras/${id}`)); }
-  positions(id: number, pageable?: Pageable) { return this.http.get<Page<PosicaoAcao>>(apiConfig.endpoint(`/carteiras/${id}/acoes`), { params: pageableParams(pageable) }); }
+  positions(id: number, pageable?: Pageable) { return this.http.get<Page<PosicaoAcao>>(apiConfig.endpoint(`/carteiras/${id}/acoes`), { params: pageableParams(pageable) }).pipe(map(normalizeTickerPage)); }
   allPositions(id: number) {
     const analyticsPageSize = 100;
     return this.positions(id, { page: 0, size: analyticsPageSize }).pipe(

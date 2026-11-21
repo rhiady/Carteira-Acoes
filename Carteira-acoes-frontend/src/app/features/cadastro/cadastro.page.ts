@@ -3,7 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { UsuarioService } from '../../core/services/usuario.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ThemeToggleComponent } from '../../shared/components/theme-toggle.component';
 
 @Component({
@@ -31,11 +31,11 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
   `
 })
 export class CadastroPage {
-  private readonly service = inject(UsuarioService); private readonly router = inject(Router);
+  private readonly auth = inject(AuthService); private readonly router = inject(Router);
   protected readonly loading = signal(false); protected readonly submitted = signal(false); protected readonly errorMessage = signal(''); protected readonly passwordVisible = signal(false); protected readonly confirmationVisible = signal(false);
   protected readonly form = new FormGroup({ nome: new FormControl('', { nonNullable: true, validators: Validators.required }), email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }), senha: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8)] }), confirmarSenha: new FormControl('', { nonNullable: true, validators: Validators.required }) });
   protected showError(control: 'nome'|'email'|'senha'|'confirmarSenha') { const field = this.form.controls[control]; return field.invalid && (field.touched || this.submitted()) || control === 'confirmarSenha' && this.passwordMismatch() && this.submitted(); }
   protected passwordMismatch() { return this.form.controls.senha.value !== this.form.controls.confirmarSenha.value; }
   protected emailError() { return this.form.controls.email.hasError('required') ? 'Informe seu email.' : 'Informe um email válido.'; }
-  protected submit() { this.submitted.set(true); this.errorMessage.set(''); if (this.form.invalid || this.passwordMismatch() || this.loading()) { this.form.markAllAsTouched(); return; } this.loading.set(true); const { nome, email, senha } = this.form.getRawValue(); this.service.create({ nome, email, senha }).subscribe({ next: () => void this.router.navigateByUrl('/login'), error: (error: { status?: number; message?: string }) => { this.errorMessage.set(error.status === 409 ? 'Já existe uma conta cadastrada com este email.' : 'Não foi possível criar sua conta. Tente novamente.'); this.loading.set(false); } }); }
+  protected submit() { this.submitted.set(true); this.errorMessage.set(''); if (this.form.invalid || this.passwordMismatch() || this.loading()) { this.form.markAllAsTouched(); return; } this.loading.set(true); const { nome, email, senha } = this.form.getRawValue(); this.auth.register({ nome, email, senha }).subscribe({ next: () => void this.router.navigateByUrl('/login'), error: (error: { status?: number; message?: string }) => { this.errorMessage.set(error.status === 409 ? 'Já existe uma conta cadastrada com este email.' : 'Não foi possível criar sua conta. Tente novamente.'); this.loading.set(false); } }); }
 }

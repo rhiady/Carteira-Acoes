@@ -1,8 +1,10 @@
 package com.carteiraacoesbackend.services;
 
 import com.carteiraacoesbackend.domains.Usuario;
+import com.carteiraacoesbackend.domains.enums.Papel;
 import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
 import com.carteiraacoesbackend.dto.AlterarPapelRequest;
+import com.carteiraacoesbackend.dto.CadastroRequest;
 import com.carteiraacoesbackend.dto.UsuarioCreateRequest;
 import com.carteiraacoesbackend.dto.UsuarioResponse;
 import com.carteiraacoesbackend.dto.UsuarioUpdateRequest;
@@ -56,6 +58,21 @@ public class UsuarioService {
       throw ApiException.conflict("EMAIL_DUPLICADO", "Já existe um usuário com este e-mail.");
     }
     Usuario usuario = mapper.toEntity(request, passwordEncoder.encode(request.password()));
+    return mapper.toResponse(repository.save(usuario));
+  }
+
+  @Transactional
+  public UsuarioResponse cadastrar(CadastroRequest request) {
+    String email = request.email().trim().toLowerCase();
+    if (repository.existsByEmail(email)) {
+      throw ApiException.conflict("EMAIL_DUPLICADO", "Já existe um usuário com este e-mail.");
+    }
+    Usuario usuario = new Usuario();
+    usuario.setNome(request.nome().trim());
+    usuario.setEmail(email);
+    usuario.setSenha(passwordEncoder.encode(request.senha()));
+    usuario.setPapel(Papel.USER);
+    usuario.setAtivo(true);
     return mapper.toResponse(repository.save(usuario));
   }
 

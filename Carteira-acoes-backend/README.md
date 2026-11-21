@@ -130,6 +130,7 @@ As listagens aceitam paginação do Spring Data, por exemplo `?page=0&size=20&so
 
 | Recurso | Operações |
 | --- | --- |
+| Autenticação | `POST /api/auth/cadastro`, `POST /api/auth/login`, `GET /api/auth/me` |
 | Usuários | `POST /api/usuarios`, `GET /api/usuarios`, `GET /api/usuarios/{id}`, `PUT /api/usuarios/{id}`, `PUT /api/usuarios/{id}/papel`, `PUT /api/usuarios/{id}/senha` |
 | Carteiras | `POST /api/carteiras`, `GET /api/carteiras`, `GET /api/carteiras/{id}`, `GET /api/usuarios/{usuarioId}/carteiras`, `GET /api/carteiras/{id}/acoes` |
 | Ações | `POST /api/acoes`, `GET /api/acoes`, `GET /api/acoes/{id}`, `GET /api/acoes/ticker/{ticker}`, `POST /api/acoes/{id}/cotacao` |
@@ -137,6 +138,11 @@ As listagens aceitam paginação do Spring Data, por exemplo `?page=0&size=20&so
 | Operações | `POST /api/operacoes/compras`, `POST /api/operacoes/vendas`, `GET /api/operacoes/{id}`, `GET /api/operacoes/carteiras/{carteiraId}` |
 
 ### Corpos de criação
+
+```json
+POST /api/auth/cadastro
+{"nome":"Ana Silva","email":"ana@example.com","senha":"uma-senha-segura"}
+```
 
 ```json
 POST /api/usuarios

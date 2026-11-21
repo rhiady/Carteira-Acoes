@@ -1,79 +1,39 @@
-# Especificação: redefinição da própria senha
+# user-self-password-change Specification
 
-## Objetivo
+## Purpose
 
-Permitir que um usuário autenticado defina uma nova senha sem informar a senha
-antiga e sem depender de fluxo de e-mail.
+Permitir que a pessoa autenticada redefina a própria senha com segurança, sem informar a senha antiga ou depender de fluxo de e-mail.
 
-## Endpoint
+## Requirements
 
-```http
-PUT /api/auth/senha
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+### Requirement: Redefinição usa o contrato autenticado publicado
 
-Payload:
+O sistema SHALL enviar `PUT /api/auth/senha` com Bearer e o payload `{ password }`. A requisição MUST NOT enviar id, login ou senha antiga; a identidade é determinada pelo token autenticado.
 
-```json
-{
-  "password": "nova-senha"
-}
-```
+#### Scenario: Senha válida é redefinida
 
-O frontend não deve enviar `id`, `login` ou senha antiga. O backend identifica o
-usuário pelo token JWT.
+- **WHEN** a pessoa informa uma nova senha válida
+- **THEN** a interface envia somente `{ password }`, confirma o sucesso, limpa o campo sensível e preserva a sessão autenticada
 
-## Respostas
+### Requirement: Validação e erros preservam a sessão quando aplicável
 
-### Sucesso
+O sistema SHALL validar senha entre 8 e 72 caracteres, bloquear submissão duplicada e apresentar mensagens de validação seguras. Uma resposta `400` SHALL preservar a sessão; uma resposta `401` SHALL limpar a sessão e redirecionar para login; uma resposta `403` SHALL apresentar acesso negado sem apagar a sessão.
 
-```http
-204 No Content
-```
+#### Scenario: Senha inválida
 
-Após o sucesso, exibir confirmação e direcionar o usuário para a área
-autenticada. O token atual continua sendo usado.
+- **WHEN** a senha está ausente, em branco ou fora do tamanho aceito
+- **THEN** a interface impede ou relata a falha sem expor detalhes técnicos e sem alterar a sessão
 
-### Erros
+#### Scenario: Sessão expirada
 
-- `400 Bad Request`: senha ausente, em branco ou com menos de 8 caracteres;
-- `401 Unauthorized`: token ausente, inválido ou expirado;
-- `403 Forbidden`: não esperado para esta rota autenticada, mas deve ser tratado
-  como acesso negado sem apagar a sessão.
+- **WHEN** `PUT /api/auth/senha` retorna `401 Unauthorized`
+- **THEN** a sessão é removida e a pessoa é direcionada para login
 
-Formato de erro:
+### Requirement: Senhas permanecem privadas
 
-```json
-{
-  "timestamp": "2026-11-17T00:00:00Z",
-  "status": 400,
-  "error": "VALIDATION_ERROR",
-  "message": "Dados da requisição são inválidos.",
-  "path": "/api/auth/senha"
-}
-```
+O sistema MUST tratar a nova senha como dado sensível: não deve armazená-la, exibi-la, registrá-la em logs ou permitir que a pessoa escolha outra conta para alterar.
 
-## Comportamento da tela
+#### Scenario: Formulário concluído
 
-- disponibilizar um campo para a nova senha;
-- validar no frontend que a senha possui entre 8 e 72 caracteres;
-- enviar a requisição com o token pelo interceptor HTTP existente;
-- desabilitar o botão enquanto a requisição estiver em andamento;
-- limpar o campo após sucesso;
-- não armazenar nem exibir a senha digitada;
-- em `401`, limpar a sessão e redirecionar para login;
-- em `400`, exibir a mensagem de validação sem alterar a sessão.
-
-## Serviço Angular
-
-O serviço pode usar o `HttpClient` já existente, sem nova dependência:
-
-```ts
-redefineSenha(password: string) {
-  return this.http.put<void>(apiConfig.endpoint('/auth/senha'), { password });
-}
-```
-
-Não criar rota pública de redefinição e não permitir que o usuário escolha o ID
-da conta alterada.
+- **WHEN** a redefinição termina com sucesso ou a pessoa sai do formulário
+- **THEN** a senha digitada não permanece em estado persistido nem é exibida pela interface

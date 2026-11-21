@@ -26,15 +26,23 @@ Compra e Venda SHALL compartilhar uma progressão clara de ativo, carteira/posi�
 - **THEN** o preço unitário permanece disponível para preenchimento manual e a interface identifica que não há sugestão de cotação
 
 ### Requirement: Resumo e validação impedem operações ambíguas
-O sistema SHALL calcular `quantidade * preco` apenas para apresentação quando ambos forem válidos, sem exibir `NaN`, e SHALL validar campos obrigatórios, valores positivos e identificação exclusiva da compra.
+O sistema SHALL calcular `quantidade * preco` apenas para apresentação quando ambos forem válidos, sem exibir `NaN`, e SHALL validar campos obrigatórios, valores positivos e a seleção de uma ação cadastrada por `acaoId` antes da compra.
 
 #### Scenario: Valor estimado
 - **WHEN** quantidade é 10 e preço é 35
 - **THEN** o resumo pode apresentar `R$ 350,00` como valor estimado, sem substituir valores retornados pela API
 
+#### Scenario: Ação não selecionada
+- **WHEN** a compra não informa `acaoId`
+- **THEN** o envio é impedido até que uma ação cadastrada seja selecionada
+
+#### Scenario: Referência de compra exclusiva
+- **WHEN** a compra é enviada
+- **THEN** ela identifica o ativo somente por `acaoId`, sem ticker ou mercado
+
 #### Scenario: Identificadores conflitantes
-- **WHEN** a compra informa `acaoId` e também ticker/mercado
-- **THEN** o envio é impedido até que exatamente um modo suportado seja escolhido
+- **WHEN** a pessoa preenche o formulário de compra
+- **THEN** a interface oferece somente a seleção da ação cadastrada e não permite combinar `acaoId` com ticker ou mercado
 
 ### Requirement: Submissão possui estados seguros
 Durante Compra ou Venda pendente, a ação principal SHALL indicar processamento e bloquear novas submissões. Falhas SHALL priorizar `message`, usar fallback seguro quando necessário e preservar valores preenchidos; sucesso SHALL fornecer feedback inequívoco.

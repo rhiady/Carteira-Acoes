@@ -29,11 +29,15 @@ The existing `/login` screen SHALL retain only email, password and `Entrar` as i
 - **THEN** navigation goes to `/cadastro` without changing the login form contract
 
 ### Requirement: Authenticated identity scopes application data
-The application SHALL use the authenticated user's `id`, `nome` and `email` as its sole frontend identity context. User-owned wallet listings SHALL query the user-scoped endpoint when available, and Dashboard, wallets, wallet details, purchase, sale, operations, analytics and `Minha conta` SHALL not present another user's data through global user selection, administrative navigation or client-side filtering. Administrative resources SHALL remain outside the common-user experience and SHALL be protected by role-aware routes.
+The application SHALL use the authenticated user's `id`, `nome` and `email` as its sole frontend identity context. A common user's wallet listings SHALL query only that person's user-scoped resource, and Dashboard, wallets, wallet details, purchase, sale, operations, analytics and `Minha conta` SHALL not present another user's data through global user selection, administrative navigation or client-side filtering. An administrator SHALL access the protected user-management listing through the published administrative resource. Administrative resources SHALL remain outside the common-user experience and SHALL be protected by role-aware routes.
 
 #### Scenario: Authenticated person opens wallets
-- **WHEN** a person with authenticated user id `7` opens the wallet list
+- **WHEN** a common user with authenticated user id `7` opens the wallet list
 - **THEN** the frontend requests the user-scoped wallet resource for user `7` and renders only that response
+
+#### Scenario: Administrator opens user management
+- **WHEN** an administrator opens the protected user-management route
+- **THEN** the frontend renders the published user listing or its accessible loading, empty or error state
 
 #### Scenario: Financial flow opens
 - **WHEN** the person starts a purchase, sale, operation history or analytics flow

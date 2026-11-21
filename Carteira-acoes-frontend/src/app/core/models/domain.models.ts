@@ -11,6 +11,7 @@ export interface AuthenticatedUser { id: number; login: string; authorities: rea
 export interface UsuarioRequest { nome: string; email: string; senha: string; }
 export interface UsuarioUpdateRequest { nome: string; email: string; senha?: string; }
 export interface Acao { id: number; ticker: string; nomeEmpresa: string; mercado: Mercado; moeda: Moeda; cotacaoAtual: number; dataHoraCotacao: string; createdAt: string; updatedAt: string; }
+export interface AcaoRequest { ticker: string; mercado: Mercado; }
 export interface Corretora { id: number; cnpj: string; razaoSocial: string; nomeFantasia: string; email: string; telefone: string; cep: string; logradouro: string; numero: string; complemento: string; bairro: string; cidade: string; uf: string; situacaoCadastral: string; registroCvm: string; dataValidacaoCvm: string; createdAt: string; updatedAt: string; }
 export interface CorretoraRequest { cnpj: string; }
 export interface Carteira { id: number; nome: string; usuarioId: number; corretoraId: number; createdAt: string; updatedAt: string; }

@@ -1,11 +1,11 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
-import { Acao, Page } from '../../core/models/domain.models';
+import { Acao, Mercado, Page } from '../../core/models/domain.models';
 import { AcaoService } from '../../core/services/acao.service';
 import { FeedbackService } from '../../core/services/feedback.service';
 import { EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent } from '../../shared/components/ui-states.component';
@@ -19,6 +19,14 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <section>
       <div class="page-heading"><div><p class="eyebrow">Mercado</p><h1>Ações</h1><p>Consulte ativos existentes e mantenha as cotações atualizadas.</p></div>@if (auth.hasAuthority('ROLE_ADMIN')) { <button mat-stroked-button type="button" [disabled]="refreshing()" (click)="refreshQuotes()">{{ refreshing() ? 'Atualizando cotações…' : 'Atualizar cotações' }}</button> }</div>
+      @if (auth.hasAuthority('ROLE_ADMIN')) {
+        <form class="search-form action-create-form" [formGroup]="createForm" (ngSubmit)="create()" novalidate>
+          <div><h2>Cadastrar ação</h2><p class="helper-text">Adicione uma ação ao catálogo global. Isso não cria carteira nem operação.</p></div>
+          <div class="field-grid field-grid--asset"><div><label for="ticker-create">Ticker</label><input id="ticker-create" formControlName="ticker" placeholder="Ex.: PETR4" autocomplete="off" autocapitalize="characters" [attr.aria-invalid]="createSubmitted() && createForm.controls.ticker.invalid" [attr.aria-describedby]="createSubmitted() && createForm.controls.ticker.invalid ? 'ticker-create-error' : null">@if (createSubmitted() && createForm.controls.ticker.invalid) { <p id="ticker-create-error" class="error" role="alert">Informe o ticker.</p> }</div><div><label for="mercado-create">Mercado</label><select id="mercado-create" formControlName="mercado"><option value="BRASIL">Brasil</option><option value="EUA">EUA</option></select></div></div>
+          @if (createError()) { <p class="error" role="alert">{{ createError() }}</p> }
+          <div class="page-actions"><button mat-flat-button type="submit" [disabled]="creating()">{{ creating() ? 'Cadastrando ação…' : 'Cadastrar ação' }}</button></div>
+        </form>
+      }
       <form class="search-form action-search" (ngSubmit)="search()"><label for="ticker-search">Buscar por ticker</label><input id="ticker-search" [formControl]="ticker" placeholder="Ex.: PETR4" aria-describedby="ticker-search-help" /><p id="ticker-search-help" class="helper-text">A busca abre o ativo existente; novas ações são fornecidas pela integração de cotações.</p><div class="page-actions"><button mat-stroked-button type="submit" [disabled]="ticker.invalid || searching()">{{ searching() ? 'Buscando…' : 'Buscar ação' }}</button><button mat-button type="button" (click)="clearSearch()">Limpar busca</button></div></form>
       @if (loading()) { <app-loading-state message="Carregando ações…" /> }
       @else if (error()) { <app-error-state [message]="error()" (retry)="load()" /> }
@@ -54,8 +62,12 @@ export class AcoesPage {
   protected readonly loading = signal(true);
   protected readonly searching = signal(false);
   protected readonly refreshing = signal(false);
+  protected readonly creating = signal(false);
+  protected readonly createSubmitted = signal(false);
+  protected readonly createError = signal('');
   protected readonly error = signal('');
   protected readonly ticker = new FormControl('', { nonNullable: true, validators: Validators.required });
+  protected readonly createForm = new FormGroup({ ticker: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.pattern(/\S+/)] }), mercado: new FormControl<Mercado>('BRASIL', { nonNullable: true }) });
   protected readonly brazilCount = computed(() => this.page()?.content.filter((item) => item.mercado === 'BRASIL').length ?? 0);
   protected readonly usaCount = computed(() => this.page()?.content.filter((item) => item.mercado === 'EUA').length ?? 0);
 
@@ -93,6 +105,19 @@ export class AcoesPage {
   }
 
   protected clearSearch() { this.ticker.setValue(''); this.load(); }
+
+  protected create() {
+    if (this.creating()) return;
+    this.createSubmitted.set(true); this.createError.set('');
+    if (this.createForm.invalid) { this.createForm.markAllAsTouched(); return; }
+    this.creating.set(true);
+    const value = this.createForm.getRawValue();
+    this.service.create({ ticker: value.ticker.trim().toUpperCase(), mercado: value.mercado }).subscribe({
+      next: () => { this.feedback.success('Ação cadastrada com sucesso.'); this.createForm.reset({ ticker: '', mercado: 'BRASIL' }); this.createSubmitted.set(false); this.load(this.page()?.number); },
+      error: (httpError: { message?: string }) => { this.createError.set(httpError.message ?? 'Não foi possível cadastrar a ação.'); this.creating.set(false); },
+      complete: () => this.creating.set(false),
+    });
+  }
 
   protected remove(item: Acao) { this.dialog.open(ConfirmDialogComponent, { data: { title: 'Excluir ação?', message: `Você está prestes a excluir ${item.ticker} — ${item.nomeEmpresa}. A ação só poderá ser removida se não possuir registros vinculados.`, confirmLabel: 'Excluir ação' }, autoFocus: 'first-tabbable', width: 'min(100% - 2rem,32rem)' }).afterClosed().subscribe((confirmed) => { if (!confirmed) return; this.service.delete(item.id).subscribe({ next: () => { this.feedback.success('Ação excluída com sucesso.'); this.page.update((current) => current ? { ...current, content: current.content.filter((entry) => entry.id !== item.id), totalElements: Math.max(current.totalElements - 1, 0) } : current); }, error: (error: unknown) => this.feedback.error(maintenanceError(error, 'Não foi possível excluir a ação.', 'Esta ação não está mais disponível.')) }); }); }
 
