@@ -14,11 +14,15 @@ The purchase experience MUST preserve a wallet or asset supplied by the entry ro
 - **THEN** the wallet and asset are preselected, the user can review quantity and price, and the request does not send conflicting asset identifiers
 
 ### Requirement: Purchase confirmation
-Before submitting a purchase, the interface MUST show a clear summary of wallet, asset, quantity, unit price and estimated operation value when those values are available.
+Before submitting a purchase, the interface MUST show a clear summary of wallet, asset, quantity, unit price and estimated operation value when those values are available. The purchase flow SHALL make asset reference, order values, optional costs, estimated total and confirmation legible as one sequential decision path, with a single visually dominant submit action.
 
 #### Scenario: User reviews a purchase
 - **WHEN** quantity and price are valid
 - **THEN** the interface shows a review state with an explicit `Confirmar compra` action
+
+#### Scenario: User reviews a purchase on a narrow viewport
+- **WHEN** a person fills a purchase order on a narrow viewport
+- **THEN** asset reference, order fields, optional costs, estimated total and confirmation remain visible in reading order without horizontal overflow
 
 ### Requirement: Contextual sale
 The sale experience MUST preserve the wallet and position supplied by the entry route when available, show known quantity available and prevent an obviously excessive quantity before submission.
