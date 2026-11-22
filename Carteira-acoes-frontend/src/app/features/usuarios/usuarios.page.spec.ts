@@ -25,6 +25,8 @@ describe('UsuariosPage', () => {
     expect(fixture.nativeElement.textContent).toContain('ROLE_USER');
     expect(fixture.nativeElement.textContent).toContain('Ativo');
     expect(fixture.nativeElement.textContent).not.toContain('Editar usuário');
+    expect(fixture.nativeElement.textContent).not.toContain('Ver carteiras');
+    expect(fixture.nativeElement.querySelector('th:last-child')?.textContent).toContain('Status');
   });
 
   it('shows an error and retries the published listing', () => {

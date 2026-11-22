@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { Moeda, Operacao, Page, PosicaoAcao, TipoOperacao } from '../../core/models/domain.models';
+import { Mercado, Moeda, Operacao, Page, PosicaoAcao, TipoOperacao } from '../../core/models/domain.models';
 import { CarteiraService } from '../../core/services/carteira.service';
 import { OperacaoService } from '../../core/services/operacao.service';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -11,7 +11,7 @@ import { EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, Pagina
 import { OperationDetailDialogComponent } from '../../shared/components/operation-detail-dialog.component';
 import { ChartPanelComponent } from '../../shared/components/chart-panel.component';
 import { cashFlowItems, tradedVolumeItems } from '../../core/mappers/operation-analytics.mapper';
-import { ApexAxisChartSeries, ApexChart, ApexXAxis } from 'ng-apexcharts';
+import { ApexAxisChartSeries, ApexChart, ApexTooltip, ApexXAxis } from 'ng-apexcharts';
 
 @Component({
   selector: 'app-historico-page',
@@ -22,9 +22,9 @@ import { ApexAxisChartSeries, ApexChart, ApexXAxis } from 'ng-apexcharts';
       @else if (error()) { <app-error-state [message]="error()" (retry)="load()" /> }
       @else if (!page()?.content?.length) { <app-empty-state message="Nenhuma operação registrada nesta carteira." /> }
       @else {
-        <div class="operation-filter-bar" aria-label="Filtrar operações por tipo"><span>Mostrar</span>@for (option of filters; track option.value) { <button type="button" [class.operation-filter--active]="filter() === option.value" [attr.aria-pressed]="filter() === option.value" (click)="filter.set(option.value)">{{ option.label }}</button> }</div>
+        <div class="operation-filter-heading"><div><h2>Filtros de operações</h2><p>Separe tipo de operação e mercado sem conversão de moeda.</p></div><div class="operation-filter-bar" aria-label="Filtrar operações"><span>Mostrar</span>@for (option of filters; track option.value) { <button type="button" [class.operation-filter--active]="filter() === option.value" [attr.aria-pressed]="filter() === option.value" (click)="filter.set(option.value)">{{ option.label }}</button> }<span class="operation-filter-bar__separator" aria-hidden="true"></span><span>Mercado</span>@for (option of marketOptions; track option.value) { <button type="button" [class.operation-filter--active]="market() === option.value" [attr.aria-pressed]="market() === option.value" (click)="market.set(option.value)">{{ option.label }}</button> }</div></div>
         <section class="operation-page-summary" aria-label="Resumo da página atual"><div class="section-heading"><div><h2>Resumo</h2><p>Valores desta página; a API não fornece totais históricos por tipo.</p></div></div><div class="operation-summary-grid">@for (summary of summaries(); track summary.moeda) { <article><span>Total comprado · {{ summary.moeda }}</span><strong>{{ summary.compras | currency:summary.moeda }}</strong></article><article><span>Total vendido · {{ summary.moeda }}</span><strong>{{ summary.vendas | currency:summary.moeda }}</strong></article><article><span>Custos · {{ summary.moeda }}</span><strong>{{ summary.custos | currency:summary.moeda }}</strong></article> }</div></section>
-        @for (currency of analyticsCurrencies(); track currency) { <section class="analytics-currency-group" [attr.aria-label]="'Análise de operações em ' + currency"><div class="currency-section-heading"><h2>Fluxo de operações · {{ currency }}</h2><p>Valores líquidos oficiais, sem conversão de moeda.</p></div><div class="chart-grid"><app-chart-panel title="Fluxo mensal" [chart]="operationChart" [series]="cashFlowSeries(currency)" [xaxis]="cashFlowAxis(currency)" [hasData]="cashFlow(currency).length > 0" [summary]="cashFlowSummary(currency)" emptyMessage="Ainda não há operações para exibir." /><app-chart-panel title="Volume por ativo" [chart]="operationChart" [series]="volumeSeries(currency)" [xaxis]="volumeAxis(currency)" [hasData]="volume(currency).length > 0" [summary]="volumeSummary(currency)" emptyMessage="Ainda não há operações para exibir." /></div></section> }
+        @for (currency of analyticsCurrencies(); track currency) { <section class="analytics-currency-group" [attr.aria-label]="'Análise de operações em ' + currency"><div class="currency-section-heading"><h2>Fluxo de operações · {{ currency }}</h2><p>{{ marketLabel() }} · valores líquidos oficiais, sem conversão de moeda.</p></div><div class="chart-grid"><app-chart-panel title="Fluxo mensal" [chart]="operationChart" [series]="cashFlowSeries(currency)" [xaxis]="cashFlowAxis(currency)" [tooltip]="financialTooltip(currency)" [hasData]="cashFlow(currency).length > 0" [summary]="cashFlowSummary(currency)" emptyMessage="Ainda não há operações para exibir." /><app-chart-panel title="Volume por ativo" [chart]="operationChart" [series]="volumeSeries(currency)" [xaxis]="volumeAxis(currency)" [tooltip]="financialTooltip(currency)" [hasData]="volume(currency).length > 0" [summary]="volumeSummary(currency)" emptyMessage="Ainda não há operações para exibir." /></div></section> }
         <div class="section-heading"><div><h2>Histórico</h2><p>{{ filteredItems().length }} registro{{ filteredItems().length === 1 ? '' : 's' }} nesta página.</p></div></div>
         @if (!filteredItems().length) { <app-empty-state message="Não há operações deste tipo nesta página." /> }
         @else { <div class="operation-history-list">@for (item of filteredItems(); track item.id) { <article class="operation-history-item"><div class="operation-history-item__identity"><span [class]="item.tipo === 'VENDA' ? 'operation-chip operation-chip--sale' : 'operation-chip'">{{ item.tipo }}</span><h3>{{ item.ticker }}</h3><p>{{ item.nomeEmpresa }}</p><small>{{ item.mercado }} · {{ item.moeda }}</small><small>{{ item.quantidade }} × {{ item.precoUnitario | currency:item.moeda }}</small></div><dl><div><dt>Valor bruto</dt><dd>{{ item.valorBruto | currency:item.moeda }}</dd></div><div><dt>Valor líquido</dt><dd>{{ item.valorLiquido | currency:item.moeda }}</dd></div><div><dt>Custos</dt><dd>{{ costs(item) | currency:item.moeda }}</dd></div>@if (item.tipo === 'COMPRA') { @let position = purchasePosition(item); <div><dt>Preço médio de compra</dt><dd>{{ position?.precoMedio === null || position === null ? '—' : (position.precoMedio | currency:position.moeda) }}</dd></div> }<div><dt>Data e hora</dt><dd>{{ item.dataHora | date:'short' }}</dd></div></dl><button mat-button type="button" (click)="openDetails(item)">Ver operação<span class="sr-only"> de {{ item.ticker }}</span></button></article> }</div> }
@@ -43,10 +43,14 @@ export class HistoricoPage {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly filter = signal<TipoOperacao | 'TODAS'>('TODAS');
+  protected readonly market = signal<Mercado | 'TODOS'>('TODOS');
   protected readonly filters: readonly { readonly label: string; readonly value: TipoOperacao | 'TODAS' }[] = [
     { label: 'Todas', value: 'TODAS' }, { label: 'Compras', value: 'COMPRA' }, { label: 'Vendas', value: 'VENDA' },
   ];
-  protected readonly filteredItems = computed(() => this.page()?.content.filter((item) => this.filter() === 'TODAS' || item.tipo === this.filter()) ?? []);
+  protected readonly marketOptions: readonly { readonly label: string; readonly value: Mercado | 'TODOS' }[] = [
+    { label: 'Todos', value: 'TODOS' }, { label: 'Brasil', value: 'BRASIL' }, { label: 'EUA', value: 'EUA' },
+  ];
+  protected readonly filteredItems = computed(() => this.page()?.content.filter((item) => (this.filter() === 'TODAS' || item.tipo === this.filter()) && (this.market() === 'TODOS' || item.mercado === this.market())) ?? []);
   protected readonly summaries = computed(() => {
     const grouped = new Map<Moeda, { moeda: Moeda; compras: number; vendas: number; custos: number }>();
     this.filteredItems().forEach((item) => {
@@ -59,7 +63,8 @@ export class HistoricoPage {
     });
     return [...grouped.values()];
   });
-  protected readonly analyticsCurrencies = computed<Moeda[]>(() => [...new Set(this.analyticsOperations().map((item) => item.moeda))]);
+  protected readonly filteredAnalyticsOperations = computed(() => this.analyticsOperations().filter((item) => this.market() === 'TODOS' || item.mercado === this.market()));
+  protected readonly analyticsCurrencies = computed<Moeda[]>(() => [...new Set(this.filteredAnalyticsOperations().map((item) => item.moeda))]);
   protected readonly operationChart: ApexChart = { type: 'bar', height: 280, toolbar: { show: false } };
   constructor() { this.load(); }
   protected load(index = 0) {
@@ -83,14 +88,16 @@ export class HistoricoPage {
     });
   }
   protected purchasePosition(item: Operacao) { return item.tipo === 'COMPRA' ? this.positionsByAsset().get(item.acaoId) ?? null : null; }
-  protected cashFlow(currency: Moeda) { return cashFlowItems(this.analyticsOperations(), currency); }
-  protected volume(currency: Moeda) { return tradedVolumeItems(this.analyticsOperations(), currency); }
+  protected cashFlow(currency: Moeda) { return cashFlowItems(this.filteredAnalyticsOperations(), currency); }
+  protected volume(currency: Moeda) { return tradedVolumeItems(this.filteredAnalyticsOperations(), currency); }
   protected cashFlowSeries(currency: Moeda): ApexAxisChartSeries { return [{ name: 'Fluxo líquido', data: this.cashFlow(currency).map((item) => item.value) }]; }
   protected volumeSeries(currency: Moeda): ApexAxisChartSeries { return [{ name: 'Volume líquido', data: this.volume(currency).map((item) => item.value) }]; }
   protected cashFlowAxis(currency: Moeda): ApexXAxis { return { categories: this.cashFlow(currency).map((item) => item.label) }; }
   protected volumeAxis(currency: Moeda): ApexXAxis { return { categories: this.volume(currency).map((item) => item.label) }; }
   protected cashFlowSummary(currency: Moeda) { return this.cashFlow(currency).map((item) => `${item.label}: ${item.value < 0 ? 'saída' : 'entrada'} ${Math.abs(item.value).toLocaleString('pt-BR', { style: 'currency', currency })}`); }
   protected volumeSummary(currency: Moeda) { return this.volume(currency).map((item) => `${item.label}: ${item.value.toLocaleString('pt-BR', { style: 'currency', currency })}`); }
+  protected marketLabel() { return this.market() === 'TODOS' ? 'Todos os mercados' : this.market() === 'BRASIL' ? 'Brasil' : 'EUA'; }
+  protected financialTooltip(currency: Moeda): ApexTooltip { return { y: { formatter: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency }) } }; }
   protected costs(item: Operacao) { return item.corretagem + item.impostos + item.valorAdicional; }
   protected openDetails(item: Operacao) { this.dialog.open(OperationDetailDialogComponent, { data: item, autoFocus: 'first-tabbable', width: 'min(100% - 2rem, 34rem)' }); }
 }

@@ -6,8 +6,9 @@ import { CarteiraService } from '../../core/services/carteira.service';
 import { CorretoraService } from '../../core/services/corretora.service';
 import { FeedbackService } from '../../core/services/feedback.service';
 import { OperacaoService } from '../../core/services/operacao.service';
+import { AuthService } from '../../core/services/auth.service';
 import { UsuarioService } from '../../core/services/usuario.service';
-import { Corretora, PosicaoAcao, UsuarioResumo } from '../../core/models/domain.models';
+import { Corretora, PosicaoAcao } from '../../core/models/domain.models';
 
 @Component({selector:'app-corretora-dialog',imports:[ReactiveFormsModule,MatButtonModule,MatDialogModule],template:`<h2 mat-dialog-title>Cadastrar corretora</h2><form mat-dialog-content [formGroup]="form" (ngSubmit)="submit()"><label for="dialog-cnpj">CNPJ</label><input id="dialog-cnpj" formControlName="cnpj">@if(form.controls.cnpj.touched&&form.invalid){<p class="error">Informe o CNPJ.</p>}@if(error()){<p class="error" role="alert">{{error()}}</p>}<div mat-dialog-actions align="end"><button mat-button type="button" [disabled]="loading()" (click)="ref.close(false)">Cancelar</button><button mat-flat-button type="submit" [disabled]="form.invalid||loading()">{{loading()?'Cadastrando…':'Cadastrar'}}</button></div></form>`})
 export class CorretoraDialogComponent{private readonly service=inject(CorretoraService);protected readonly ref=inject(MatDialogRef<CorretoraDialogComponent>);private readonly feedback=inject(FeedbackService);protected readonly loading=signal(false);protected readonly error=signal('');protected readonly form=new FormGroup({cnpj:new FormControl('',{nonNullable:true,validators:Validators.required})});protected submit(){if(this.form.invalid){this.form.markAllAsTouched();return}this.loading.set(true);this.service.create(this.form.getRawValue()).subscribe({next:()=>{this.feedback.success('Corretora cadastrada.');this.ref.close(true)},error:(e:{message?:string})=>{this.error.set(e.message??'Não foi possível cadastrar a corretora.');this.loading.set(false)}})}}
@@ -15,32 +16,32 @@ export class CorretoraDialogComponent{private readonly service=inject(CorretoraS
 @Component({selector:'app-usuario-dialog',imports:[ReactiveFormsModule,MatButtonModule,MatDialogModule],template:`<h2 mat-dialog-title>Cadastrar usuário</h2><form mat-dialog-content [formGroup]="form" (ngSubmit)="submit()"><label for="dialog-nome">Nome</label><input id="dialog-nome" formControlName="nome" autocomplete="name"><label for="dialog-email">E-mail</label><input id="dialog-email" type="email" formControlName="email" autocomplete="email"><label for="dialog-senha">Senha</label><input id="dialog-senha" type="password" formControlName="senha" autocomplete="new-password">@if(form.touched&&form.invalid){<p class="error">Preencha todos os campos corretamente.</p>}@if(error()){<p class="error" role="alert">{{error()}}</p>}<div mat-dialog-actions align="end"><button mat-button type="button" [disabled]="loading()" (click)="ref.close(false)">Cancelar</button><button mat-flat-button type="submit" [disabled]="form.invalid||loading()">{{loading()?'Cadastrando…':'Cadastrar'}}</button></div></form>`})
 export class UsuarioDialogComponent{private readonly service=inject(UsuarioService);protected readonly ref=inject(MatDialogRef<UsuarioDialogComponent>);private readonly feedback=inject(FeedbackService);protected readonly loading=signal(false);protected readonly error=signal('');protected readonly form=new FormGroup({nome:new FormControl('',{nonNullable:true,validators:Validators.required}),email:new FormControl('',{nonNullable:true,validators:[Validators.required,Validators.email]}),senha:new FormControl('',{nonNullable:true,validators:Validators.required})});protected submit(){if(this.form.invalid){this.form.markAllAsTouched();return}this.loading.set(true);this.service.create(this.form.getRawValue()).subscribe({next:()=>{this.feedback.success('Usuário cadastrado.');this.ref.close(true)},error:(e:{message?:string})=>{this.error.set(e.message??'Não foi possível cadastrar o usuário.');this.loading.set(false)}})}}
 
-@Component({selector:'app-carteira-dialog',imports:[ReactiveFormsModule,MatButtonModule,MatDialogModule],template:`<h2 mat-dialog-title>Criar carteira</h2><form mat-dialog-content [formGroup]="form" (ngSubmit)="submit()"><label for="dialog-carteira">Nome</label><input id="dialog-carteira" formControlName="nome"><label for="dialog-usuario">Usuário</label><select id="dialog-usuario" formControlName="usuarioId"><option [ngValue]="0">Selecione</option>@for(item of users();track item.id){<option [ngValue]="item.id">{{item.login}}</option>}</select><label for="dialog-corretora">Corretora</label><select id="dialog-corretora" formControlName="corretoraId"><option [ngValue]="0">Selecione</option>@for(item of brokers();track item.id){<option [ngValue]="item.id">{{item.nomeFantasia||item.razaoSocial||item.cnpj}}</option>}</select>@if(loadingOptions()){<p role="status">Carregando opções…</p>}@if(form.touched&&form.invalid){<p class="error">Informe o nome, usuário e corretora.</p>}@if(error()){<p class="error" role="alert">{{error()}}</p>}<div mat-dialog-actions align="end"><button mat-button type="button" [disabled]="loading()" (click)="ref.close(false)">Cancelar</button><button mat-flat-button type="submit" [disabled]="form.invalid||loading()||loadingOptions()">{{loading()?'Criando…':'Criar carteira'}}</button></div></form>`})
+@Component({selector:'app-carteira-dialog',imports:[ReactiveFormsModule,MatButtonModule,MatDialogModule],template:`<div class="wallet-dialog"><h2 mat-dialog-title>Criar carteira</h2><p class="wallet-dialog__intro">Organize seus investimentos com os dados da sua conta atual.</p><form mat-dialog-content class="wallet-creation-form" [formGroup]="form" (ngSubmit)="submit()"><fieldset><legend>Identificação</legend><label for="dialog-carteira">Nome da carteira <span aria-hidden="true">*</span></label><input id="dialog-carteira" formControlName="nome" aria-describedby="dialog-carteira-help"><p id="dialog-carteira-help" class="helper-text">Ex.: Investimentos de longo prazo.</p></fieldset><fieldset><legend>Corretora</legend><label for="dialog-corretora">Corretora <span aria-hidden="true">*</span></label><select id="dialog-corretora" formControlName="corretoraId" aria-describedby="dialog-corretora-help"><option [ngValue]="0">Selecione uma corretora</option>@for(item of brokers();track item.id){<option [ngValue]="item.id">{{item.nomeFantasia||item.razaoSocial||item.cnpj}}</option>}</select><p id="dialog-corretora-help" class="helper-text">A carteira será criada vazia. As ações entram depois pelas operações.</p></fieldset><p class="wallet-ownership-note" role="status">Esta carteira será vinculada à conta autenticada.</p>@if(loadingOptions()){<p role="status">Carregando corretoras…</p>}@if(form.touched&&form.invalid){<p class="error" role="alert">Informe o nome e a corretora.</p>}@if(identityError()){<p class="error" role="alert">{{identityError()}}</p>}@if(error()){<p class="error" role="alert">{{error()}}</p>}<div mat-dialog-actions align="end"><button mat-button type="button" [disabled]="loading()" (click)="ref.close(false)">Cancelar</button><button mat-flat-button type="submit" [disabled]="form.invalid||loading()||loadingOptions()">{{loading()?'Criando…':'Criar carteira'}}</button></div></form></div>`})
 export class CarteiraDialogComponent {
   private readonly service = inject(CarteiraService);
-  private readonly usersService = inject(UsuarioService);
+  private readonly auth = inject(AuthService);
   private readonly brokersService = inject(CorretoraService);
   protected readonly ref = inject(MatDialogRef<CarteiraDialogComponent>);
   private readonly feedback = inject(FeedbackService);
-  protected readonly users = signal<UsuarioResumo[]>([]);
   protected readonly brokers = signal<Corretora[]>([]);
   protected readonly loadingOptions = signal(true);
   protected readonly loading = signal(false);
+  protected readonly identityError = signal('');
   protected readonly error = signal('');
-  protected readonly form = new FormGroup({ nome: new FormControl('', { nonNullable: true, validators: Validators.required }), usuarioId: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }), corretoraId: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }) });
-  private optionRequests = 0;
+  protected readonly form = new FormGroup({ nome: new FormControl('', { nonNullable: true, validators: Validators.required }), corretoraId: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }) });
 
   constructor() {
-    this.usersService.list({ size: 100, sort: 'id,asc' }).subscribe({ next: (page) => { this.users.set(page.content); this.finishOptions(); }, error: () => this.failOptions() });
-    this.brokersService.list({ size: 100, sort: 'nomeFantasia,asc' }).subscribe({ next: (page) => { this.brokers.set(page.content); this.finishOptions(); }, error: () => this.failOptions() });
+    this.brokersService.list({ size: 100, sort: 'nomeFantasia,asc' }).subscribe({ next: (page) => { this.brokers.set(page.content); this.loadingOptions.set(false); }, error: () => this.failOptions() });
   }
 
-  private finishOptions() { this.optionRequests++; if (this.optionRequests === 2) this.loadingOptions.set(false); }
-  private failOptions() { this.error.set('Não foi possível carregar usuários e corretoras.'); this.loadingOptions.set(false); }
+  private failOptions() { this.error.set('Não foi possível carregar as corretoras.'); this.loadingOptions.set(false); }
   protected submit() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    const user = this.auth.currentUser();
+    if (!user) { this.identityError.set('Sua sessão não está disponível. Entre novamente para criar a carteira.'); return; }
+    this.identityError.set('');
     this.loading.set(true);
-    this.service.create(this.form.getRawValue()).subscribe({
+    this.service.create({ ...this.form.getRawValue(), usuarioId: user.id }).subscribe({
       next: () => { this.feedback.success('Carteira criada.'); this.ref.close(true); },
       error: (error: { message?: string }) => { this.error.set(error.message ?? 'Não foi possível criar a carteira.'); this.loading.set(false); },
     });

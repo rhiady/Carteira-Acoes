@@ -54,6 +54,18 @@ describe('HistoricoPage', () => {
     expect(fixture.nativeElement.textContent).toContain('USD');
   });
 
+  it('filters the current page and analytics by market', () => {
+    const fixture = TestBed.createComponent(HistoricoPage);
+    fixture.detectChanges();
+    const page = fixture.componentInstance as unknown as { market: { set(value: 'EUA'): void } };
+    page.market.set('EUA');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('AAPL');
+    expect(fixture.nativeElement.textContent).not.toContain('PETR4');
+    expect(fixture.nativeElement.textContent).toContain('EUA');
+  });
+
   it('@spec:AC-001 shows the authoritative purchase average only for purchases', () => {
     const fixture = TestBed.createComponent(HistoricoPage);
     fixture.detectChanges();

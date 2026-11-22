@@ -15,6 +15,7 @@ describe('AdminPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Administração');
     expect(fixture.nativeElement.textContent).toContain('Gestão');
     expect(fixture.nativeElement.querySelector('a[href="/usuarios"]')?.textContent).toContain('Usuários');
+    expect(fixture.nativeElement.querySelector('a[href="/operacoes"]')?.textContent).toContain('Operações');
     expect(fixture.nativeElement.querySelector('table')).toBeNull();
   });
 

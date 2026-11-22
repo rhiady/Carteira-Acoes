@@ -60,6 +60,18 @@ describe('CarteiraDetailPage', () => {
     expect(page.resultPlotOptions.bar.colors.ranges).toHaveLength(3);
   });
 
+  it('scopes analytics to the selected market without combining currencies', () => {
+    const fixture = TestBed.createComponent(CarteiraDetailPage);
+    fixture.detectChanges();
+    const page = fixture.componentInstance as unknown as { market: { set(value: 'EUA'): void } };
+    page.market.set('EUA');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Exibindo dados de EUA sem conversão.');
+    expect(fixture.nativeElement.textContent).toContain('AAPL');
+    expect(fixture.nativeElement.textContent).not.toContain('PETR4:');
+  });
+
   it('renders authoritative investment totals with distinct labels', () => {
     carteiraService.positions.mockReturnValueOnce(of({ content: [{ carteiraId: 7, acaoId: 1, ticker: 'PETR4', nomeEmpresa: 'Petrobras', mercado: 'BRASIL', moeda: 'BRL', quantidade: 15, cotacaoAtual: 45, dataHoraCotacao: '2026-09-03T00:00:00Z', valorAtual: 675, precoMedio: 35, valorInvestidoAtual: 525, valorTotalComprado: 700, valorTotalVendido: 225, precoMedioVenda: 45, lucroPrejuizoRealizado: 50, lucroPrejuizoNaoRealizado: 150, lucroPrejuizo: 200 }], totalElements: 1, totalPages: 1, size: 10, number: 0, first: true, last: true, numberOfElements: 1, empty: false } as Page<PosicaoAcao>));
     const fixture = TestBed.createComponent(CarteiraDetailPage);

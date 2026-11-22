@@ -5,10 +5,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ApexAxisChartSeries, ApexChart, ApexNonAxisChartSeries, ApexPlotOptions, ApexXAxis } from 'ng-apexcharts';
+import { ApexAxisChartSeries, ApexChart, ApexNonAxisChartSeries, ApexPlotOptions, ApexTooltip, ApexXAxis } from 'ng-apexcharts';
 import { formatMoney, formatSignedMoney, priceVariationPercent } from '../../core/formatters/financial.formatter';
 import { compositionItems, priceComparisonItems, resultItems, walletComparisonItems, walletResultItems } from '../../core/mappers/portfolio-analytics.mapper';
-import { Moeda, Page, PosicaoAcao, ResumoCarteira } from '../../core/models/domain.models';
+import { Mercado, Moeda, Page, PosicaoAcao, ResumoCarteira } from '../../core/models/domain.models';
 import { AcaoService } from '../../core/services/acao.service';
 import { CarteiraService } from '../../core/services/carteira.service';
 import { FeedbackService } from '../../core/services/feedback.service';
@@ -45,15 +45,23 @@ import { maintenanceError } from '../../core/services/maintenance-error';
           }
         </div>
 
+        <div class="analytics-toolbar"><div><h2>Visão por mercado</h2><p>Filtre os gráficos sem converter BRL e USD.</p></div><nav class="market-lens" aria-label="Filtrar analytics por mercado">
+          <span>Mercado</span>
+          @for (option of marketOptions; track option.value) {
+            <button type="button" [class.market-lens__active]="market() === option.value" [attr.aria-pressed]="market() === option.value" (click)="market.set(option.value)">{{ option.label }}</button>
+          }
+          <small>{{ marketDescription() }}</small>
+        </nav></div>
+
         @for (currency of chartCurrencies(); track currency) {
           <section class="analytics-currency-group" [attr.aria-label]="'Gráficos em ' + currency">
-            <div class="currency-section-heading"><h2>Analytics · {{ currency }}</h2><p>Valores em {{ currency }}. Moedas diferentes não são combinadas.</p></div>
+            <div class="currency-section-heading"><h2>Analytics · {{ currency }}</h2><p>{{ marketLabel() }} · valores oficiais em {{ currency }}. Moedas diferentes não são combinadas.</p></div>
             <div class="chart-grid">
-              <app-chart-panel title="Composição por ação · {{ currency }}" [chart]="donutChart" [series]="compositionSeries(currency)" [labels]="compositionLabels(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="composition(currency).length > 0" [summary]="compositionSummary(currency)" emptyMessage="Ainda não há posições suficientes para exibir a composição." />
-              <app-chart-panel title="Lucro / prejuízo por ação · {{ currency }}" [chart]="resultChart" [series]="resultSeries(currency)" [xaxis]="resultAxis(currency)" [plotOptions]="resultPlotOptions" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="results(currency).length > 0" [summary]="resultSummary(currency)" emptyMessage="Ainda não há resultados por ação para exibir." />
-              <app-chart-panel title="Preço médio x cotação · {{ currency }}" [chart]="comparisonChart" [series]="comparisonSeries(currency)" [xaxis]="comparisonAxis(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="comparisons(currency).length > 0" [summary]="comparisonSummary(currency)" emptyMessage="Ainda não há preço médio e cotação comparáveis." />
-              <app-chart-panel title="Investido x valor atual · {{ currency }}" [chart]="comparisonChart" [series]="summaryComparisonSeries(currency)" [xaxis]="summaryComparisonAxis(currency)" [hasData]="summaryComparisons(currency).length > 0" [summary]="summaryComparisonSummary(currency)" emptyMessage="Resumo financeiro indisponível." />
-              <app-chart-panel title="Resultado realizado x não realizado · {{ currency }}" [chart]="comparisonChart" [series]="summaryResultSeries(currency)" [xaxis]="summaryResultAxis(currency)" [hasData]="summaryResults(currency).length > 0" [summary]="summaryResultSummary(currency)" emptyMessage="Resumo de resultado indisponível." />
+              <app-chart-panel title="Composição por ação · {{ currency }}" [chart]="donutChart" [series]="compositionSeries(currency)" [labels]="compositionLabels(currency)" [tooltip]="financialTooltip(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="composition(currency).length > 0" [summary]="compositionSummary(currency)" emptyMessage="Ainda não há posições suficientes para exibir a composição." />
+              <app-chart-panel title="Lucro / prejuízo por ação · {{ currency }}" [chart]="resultChart" [series]="resultSeries(currency)" [xaxis]="resultAxis(currency)" [tooltip]="financialTooltip(currency)" [plotOptions]="resultPlotOptions" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="results(currency).length > 0" [summary]="resultSummary(currency)" emptyMessage="Ainda não há resultados por ação para exibir." />
+              <app-chart-panel title="Preço médio x cotação · {{ currency }}" [chart]="comparisonChart" [series]="comparisonSeries(currency)" [xaxis]="comparisonAxis(currency)" [tooltip]="financialTooltip(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="comparisons(currency).length > 0" [summary]="comparisonSummary(currency)" emptyMessage="Ainda não há preço médio e cotação comparáveis." />
+              <app-chart-panel title="Investido x valor atual · {{ currency }}" [chart]="comparisonChart" [series]="summaryComparisonSeries(currency)" [xaxis]="summaryComparisonAxis(currency)" [tooltip]="financialTooltip(currency)" [hasData]="summaryComparisons(currency).length > 0" [summary]="summaryComparisonSummary(currency)" emptyMessage="Resumo financeiro indisponível." />
+              <app-chart-panel title="Resultado realizado x não realizado · {{ currency }}" [chart]="comparisonChart" [series]="summaryResultSeries(currency)" [xaxis]="summaryResultAxis(currency)" [tooltip]="financialTooltip(currency)" [hasData]="summaryResults(currency).length > 0" [summary]="summaryResultSummary(currency)" emptyMessage="Resumo de resultado indisponível." />
             </div>
           </section>
         }
@@ -100,6 +108,10 @@ export class CarteiraDetailPage {
   protected readonly analyticsPositions = signal<readonly PosicaoAcao[]>([]);
   protected readonly analyticsLoading = signal(false);
   protected readonly analyticsError = signal('');
+  protected readonly market = signal<Mercado | 'TODOS'>('TODOS');
+  protected readonly marketOptions: readonly { label: string; value: Mercado | 'TODOS' }[] = [
+    { label: 'Todos', value: 'TODOS' }, { label: 'Brasil', value: 'BRASIL' }, { label: 'EUA', value: 'EUA' },
+  ];
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly refreshing = signal(false);
@@ -119,9 +131,10 @@ export class CarteiraDetailPage {
     }));
   });
   protected readonly chartCurrencies = computed<Moeda[]>(() => [...new Set([
-    ...(this.summary()?.resumosPorMoeda.map((subtotal) => subtotal.moeda) ?? []),
-    ...this.analyticsPositions().map((position) => position.moeda),
+    ...(this.summary()?.resumosPorMoeda.map((subtotal) => subtotal.moeda) ?? []).filter((currency) => this.marketCurrency(currency)),
+    ...this.filteredAnalyticsPositions().map((position) => position.moeda),
   ])]);
+  protected readonly filteredAnalyticsPositions = computed(() => this.analyticsPositions().filter((position) => this.market() === 'TODOS' || position.mercado === this.market()));
   protected readonly donutChart: ApexChart = { type: 'donut', height: 300 };
   protected readonly resultChart: ApexChart = { type: 'bar', height: 300 };
   protected readonly comparisonChart: ApexChart = { type: 'bar', height: 300, toolbar: { show: false } };
@@ -152,9 +165,9 @@ export class CarteiraDetailPage {
     });
   }
 
-  protected composition(currency: Moeda) { return compositionItems(this.analyticsPositions(), currency); }
-  protected results(currency: Moeda) { return resultItems(this.analyticsPositions(), currency); }
-  protected comparisons(currency: Moeda) { return priceComparisonItems(this.analyticsPositions(), currency); }
+  protected composition(currency: Moeda) { return compositionItems(this.filteredAnalyticsPositions(), currency); }
+  protected results(currency: Moeda) { return resultItems(this.filteredAnalyticsPositions(), currency); }
+  protected comparisons(currency: Moeda) { return priceComparisonItems(this.filteredAnalyticsPositions(), currency); }
   protected compositionLabels(currency: Moeda) { return this.composition(currency).map((item) => item.label); }
   protected compositionSeries(currency: Moeda): ApexNonAxisChartSeries { return this.composition(currency).map((item) => item.value); }
   protected resultSeries(currency: Moeda): ApexAxisChartSeries { return [{ name: 'Lucro / Prejuízo', data: this.results(currency).map((item) => item.value) }]; }
@@ -172,8 +185,12 @@ export class CarteiraDetailPage {
   protected summaryResultAxis(currency: Moeda): ApexXAxis { return { categories: this.summaryResults(currency).map((item) => item.label) }; }
   protected summaryComparisonSummary(currency: Moeda) { return this.summaryComparisons(currency).map((item) => `${item.label}: ${this.money(item.value, currency)}`); }
   protected summaryResultSummary(currency: Moeda) { return this.summaryResults(currency).map((item) => `${item.label}: ${this.signedMoney(item.value, currency)}`); }
+  protected financialTooltip(currency: Moeda): ApexTooltip { return { y: { formatter: (value: number) => this.money(value, currency) } }; }
   protected investedTotal(currency: Moeda) { return this.investedTotals().get(currency) ?? null; }
   protected investedDescription(currency: Moeda) { return this.analyticsLoading() ? 'Carregando posições completas…' : this.investedTotal(currency) === null ? 'total indisponível' : `soma das posições em ${currency}`; }
+  protected marketCurrency(currency: Moeda) { return this.market() === 'TODOS' || (this.market() === 'BRASIL' && currency === 'BRL') || (this.market() === 'EUA' && currency === 'USD'); }
+  protected marketLabel() { return this.market() === 'TODOS' ? 'Todos os mercados' : this.market() === 'BRASIL' ? 'Brasil' : 'EUA'; }
+  protected marketDescription() { return this.market() === 'TODOS' ? 'BRL e USD permanecem separados.' : `Exibindo dados de ${this.marketLabel()} sem conversão.`; }
 
   private loadSummary() {
     this.service.summary(this.id).subscribe({

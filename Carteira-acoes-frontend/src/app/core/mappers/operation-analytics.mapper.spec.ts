@@ -10,4 +10,10 @@ describe('operation analytics mappers', () => {
     expect(cashFlowItems(items, 'BRL')).toEqual([{ label: '2026-01', value: -6, moeda: 'BRL' }]);
     expect(tradedVolumeItems(items, 'USD')).toEqual([{ label: 'AAPL', value: 20, moeda: 'USD' }]);
   });
+
+  it('filters cash flow and volume by market', () => {
+    const items = [operation({}), operation({ id: 3, mercado: 'EUA', moeda: 'USD', ticker: 'AAPL', valorLiquido: 20 })];
+    expect(cashFlowItems(items, 'USD', 'BRASIL')).toEqual([]);
+    expect(tradedVolumeItems(items, 'USD', 'EUA')).toEqual([{ label: 'AAPL', value: 20, moeda: 'USD' }]);
+  });
 });

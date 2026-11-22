@@ -85,6 +85,25 @@ form:not([mat-dialog-content]) button .mdc-button__label, section > button .mdc-
   .mat-mdc-dialog-actions { padding-inline: var(--space-4) !important; }
 }
 
+/* Market lens: one compact, keyboard-friendly control scopes every analytic surface. */
+.market-lens { align-items: center; border-bottom: 1px solid var(--border-subtle); display: flex; flex-wrap: wrap; gap: var(--space-2); padding-bottom: var(--space-3); }
+.analytics-toolbar, .operation-filter-heading { align-items: end; border-top: 1px solid var(--border-subtle); display: flex; flex-wrap: wrap; gap: var(--space-4); justify-content: space-between; padding-top: var(--space-4); }
+.analytics-toolbar h2, .operation-filter-heading h2 { font-size: 1rem; letter-spacing: -.02em; margin: 0; }
+.analytics-toolbar p, .operation-filter-heading p { color: var(--text-secondary); font-size: .84rem; margin: .35rem 0 0; }
+.analytics-toolbar .market-lens { border-bottom: 0; padding-bottom: 0; }
+.operation-filter-heading .operation-filter-bar { justify-content: flex-end; }
+.market-lens > span { color: var(--text-secondary); font-size: .78rem; font-weight: 800; letter-spacing: .06em; margin-right: var(--space-2); text-transform: uppercase; }
+.market-lens button { background: var(--surface-base); border: 1px solid var(--border-subtle); color: var(--text-primary); cursor: pointer; font: inherit; font-weight: 700; min-height: 2.5rem; padding: .5rem .85rem; }
+.market-lens button:hover, .market-lens button:focus-visible { border-color: var(--color-blue); }
+.market-lens button.market-lens__active { background: var(--color-blue); border-color: var(--color-blue); color: #fff; }
+.market-lens small { color: var(--text-secondary); margin-left: auto; }
+.operation-filter-bar__separator { border-left: 1px solid var(--border-subtle); height: 1.5rem; margin-inline: var(--space-2); }
+.creation-form { max-width: min(100%, 48rem); width: 100%; }
+@media (max-width: 640px) {
+  .market-lens small { flex-basis: 100%; margin-left: 0; }
+  .operation-filter-bar__separator { display: none; }
+}
+
 /* Theme adaptation: the light Swiss surface remains the reference; dark uses
    layered blue-grafite surfaces instead of an automatic color inversion. */
 [data-theme='dark'] {
@@ -228,6 +247,8 @@ td:first-child, th:first-child { text-align: left; }
   .portfolio-summary-card { grid-template-columns: 1fr; }
   .portfolio-summary-card__actions { align-items: start; flex-direction: row; flex-wrap: wrap; }
   .portfolio-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analytics-toolbar, .operation-filter-heading { align-items: stretch; flex-direction: column; }
+  .operation-filter-heading .operation-filter-bar { justify-content: flex-start; }
 }
 @media (max-width: 640px) {
   .portfolio-summary-card { gap: var(--space-4); padding: var(--space-4); }
@@ -241,4 +262,35 @@ td:first-child, th:first-child { text-align: left; }
   .financial-metric-grid, .operation-summary-grid { gap: var(--space-2); background: transparent; }
   .financial-metric, .operation-summary-grid article { border: 1px solid var(--border-subtle); }
   .page-actions > *, .position-card__actions > * { flex: 1 1 auto; }
+}
+
+/* Wallet creation: one editorial composition for the page and admin dialog. */
+.wallet-creation-page { gap: clamp(var(--space-5), 4vw, var(--space-8)); }
+.wallet-creation-heading { align-items: end; }
+.wallet-creation-heading h1 { max-width: 9ch; }
+.wallet-creation-heading p { max-width: 46ch; }
+.wallet-creation-form { background: var(--surface-base); border: 1px solid var(--border-subtle); border-top: 3px solid var(--color-blue); display: grid; gap: 0; max-width: min(100%, 46rem); padding: 0; }
+.wallet-creation-form fieldset { gap: var(--space-3); padding: clamp(var(--space-5), 4vw, var(--space-8)); }
+.wallet-creation-form fieldset + fieldset { border-top: 1px solid var(--border-subtle); }
+.wallet-creation-form legend { font-size: 1.08rem; letter-spacing: -.02em; margin-bottom: var(--space-2); }
+.wallet-creation-form label { margin-top: 0; }
+.wallet-creation-form input, .wallet-creation-form select { min-height: 3rem; }
+.wallet-creation-form .form-error-summary, .wallet-creation-form > .error, .wallet-creation-form > [role='alert'] { margin-inline: clamp(var(--space-5), 4vw, var(--space-8)); }
+.wallet-ownership-note { background: var(--surface-raised); border: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: .84rem; line-height: 1.5; margin: 0 clamp(var(--space-5), 4vw, var(--space-8)) var(--space-5); padding: var(--space-3) var(--space-4); }
+.wallet-creation-form .form-actions { margin: 0; padding: var(--space-4) clamp(var(--space-5), 4vw, var(--space-8)) clamp(var(--space-5), 4vw, var(--space-8)); }
+.wallet-dialog { display: grid; gap: var(--space-2); min-width: 0; width: 100%; }
+.wallet-dialog h2 { border-bottom: 1px solid var(--border-subtle); font-size: 1.4rem; letter-spacing: -.035em; margin: 0; padding: 0 0 var(--space-3); }
+.wallet-dialog__intro { color: var(--text-secondary); line-height: 1.5; margin: 0 0 var(--space-3); }
+.wallet-dialog .wallet-creation-form { border-top-width: 2px; }
+.wallet-dialog .wallet-creation-form[mat-dialog-content] { min-width: 0; overflow-x: hidden; width: 100%; }
+.wallet-dialog .wallet-creation-form fieldset { padding: var(--space-4) 0; }
+.wallet-dialog .wallet-creation-form fieldset + fieldset { border-top: 1px solid var(--border-subtle); }
+.wallet-dialog .wallet-creation-form .wallet-ownership-note { margin-inline: 0; }
+.wallet-dialog .wallet-creation-form [mat-dialog-actions] { border-top: 1px solid var(--border-subtle); margin: 0; padding: var(--space-4) 0 0; }
+@media (max-width: 640px) {
+  .wallet-creation-heading h1 { max-width: none; }
+  .wallet-creation-form fieldset { padding: var(--space-5); }
+  .wallet-creation-form .form-error-summary, .wallet-creation-form > .error, .wallet-creation-form > [role='alert'], .wallet-ownership-note { margin-inline: var(--space-5); }
+  .wallet-creation-form .form-actions { align-items: stretch; flex-direction: column-reverse; padding: var(--space-4) var(--space-5) var(--space-5); }
+  .wallet-creation-form .form-actions > * { justify-content: center; width: 100%; }
 }

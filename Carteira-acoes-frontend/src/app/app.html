@@ -31,7 +31,9 @@
       } }
       @if (auth.hasAuthority('ROLE_ADMIN')) { <p class="navigation-label navigation-label--secondary">Administração</p>
       <mat-nav-list aria-label="Gestão">
+        <a mat-list-item routerLink="/acoes" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">trending_up</mat-icon><span matListItemTitle>Ações</span></a>
         <a mat-list-item routerLink="/carteiras" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">account_balance_wallet</mat-icon><span matListItemTitle>Carteiras</span></a>
+        <a mat-list-item routerLink="/operacoes" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">swap_horiz</mat-icon><span matListItemTitle>Operações</span></a>
         <a mat-list-item routerLink="/corretoras" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">account_balance</mat-icon><span matListItemTitle>Corretoras</span></a>
         <a mat-list-item routerLink="/usuarios" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">group</mat-icon><span matListItemTitle>Usuários</span></a>
         <a mat-list-item routerLink="/admin" routerLinkActive="active" (click)="closeNavigationOnCompactViewport()"><mat-icon matListItemIcon aria-hidden="true">admin_panel_settings</mat-icon><span matListItemTitle>Administração</span></a>

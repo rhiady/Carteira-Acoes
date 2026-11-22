@@ -27,4 +27,10 @@ describe('portfolio analytics mappers', () => {
       { label: 'FLAT3', value: 0, moeda: 'BRL', direction: 'neutral' },
     ]);
   });
+
+  it('filters positions by market without mixing currencies', () => {
+    const usd = { ...position, acaoId: 11, ticker: 'AAPL', mercado: 'EUA' as const, moeda: 'USD' as const, valorAtual: 100 };
+    expect(compositionItems([position, usd], 'USD', 'EUA')).toEqual([{ label: 'AAPL', value: 100, moeda: 'USD' }]);
+    expect(compositionItems([position, usd], 'BRL', 'EUA')).toEqual([]);
+  });
 });
