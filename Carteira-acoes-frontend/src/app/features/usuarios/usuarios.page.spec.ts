@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { UsuariosPage } from './usuarios.page';
 
-const user = { id: 4, nome: 'Ana Silva', email: 'ana@exemplo.com', createdAt: '2026-11-21T12:00:00Z', updatedAt: '2026-11-21T12:00:00Z' };
+const user = { id: 4, login: 'ana@exemplo.com', papel: 'ROLE_USER', ativo: true };
 const page = { content: [user], totalElements: 1, totalPages: 1, size: 10, number: 0, first: true, last: true, numberOfElements: 1, empty: false };
 
 describe('UsuariosPage', () => {
@@ -20,8 +20,11 @@ describe('UsuariosPage', () => {
 
   it('loads the protected paginated user listing', () => {
     const fixture: ComponentFixture<UsuariosPage> = TestBed.createComponent(UsuariosPage); fixture.detectChanges();
-    expect(service.list).toHaveBeenCalledWith({ page: 0, size: 10, sort: 'nome,asc' });
-    expect(fixture.nativeElement.textContent).toContain('Ana Silva');
+    expect(service.list).toHaveBeenCalledWith({ page: 0, size: 10, sort: 'id,asc' });
+    expect(fixture.nativeElement.textContent).toContain('ana@exemplo.com');
+    expect(fixture.nativeElement.textContent).toContain('ROLE_USER');
+    expect(fixture.nativeElement.textContent).toContain('Ativo');
+    expect(fixture.nativeElement.textContent).not.toContain('Editar usuário');
   });
 
   it('shows an error and retries the published listing', () => {
@@ -30,7 +33,15 @@ describe('UsuariosPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Acesso negado.');
     (fixture.nativeElement.querySelector('.error-state button') as HTMLButtonElement).click(); fixture.detectChanges();
     expect(service.list).toHaveBeenCalledTimes(2);
-    expect(fixture.nativeElement.textContent).toContain('Ana Silva');
+    expect(fixture.nativeElement.textContent).toContain('ana@exemplo.com');
+  });
+
+  it('keeps the session context and does not offer retry for a forbidden user listing', () => {
+    service.list.mockReturnValueOnce(throwError(() => ({ status: 403, message: 'Acesso negado.' })));
+    const fixture: ComponentFixture<UsuariosPage> = TestBed.createComponent(UsuariosPage); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Seu acesso à lista de usuários não foi autorizado. A sessão permanece ativa.');
+    expect(fixture.nativeElement.querySelector('.error-state button')).toBeNull();
+    expect(fixture.nativeElement.querySelector('table')).toBeNull();
   });
 
   it('shows the empty state when the published listing has no users', () => {

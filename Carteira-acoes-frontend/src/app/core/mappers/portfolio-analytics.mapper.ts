@@ -1,4 +1,4 @@
-import { PosicaoAcao } from '../models/domain.models';
+import { PosicaoAcao, ResumoPorMoeda } from '../models/domain.models';
 
 export interface PortfolioChartItem { label: string; value: number; moeda: PosicaoAcao['moeda']; }
 export type ResultDirection = 'negative' | 'neutral' | 'positive';
@@ -23,3 +23,10 @@ export const resultItems = (positions: readonly PosicaoAcao[], moeda: PosicaoAca
 export const priceComparisonItems = (positions: readonly PosicaoAcao[], moeda: PosicaoAcao['moeda']) => positions
   .filter((position) => position.moeda === moeda && Number.isFinite(position.precoMedio) && Number.isFinite(position.cotacaoAtual))
   .map((position): PriceComparisonItem => ({ label: position.ticker, average: position.precoMedio!, current: position.cotacaoAtual!, moeda }));
+
+export const walletComparisonItems = (summary: ResumoPorMoeda) => summary.valorInvestidoAtual !== null && summary.valorInvestidoAtual !== undefined && summary.valorAtual !== null
+  ? [{ label: 'Investido', value: summary.valorInvestidoAtual }, { label: 'Atual', value: summary.valorAtual }]
+  : [];
+export const walletResultItems = (summary: ResumoPorMoeda) => summary.lucroPrejuizoRealizado !== null && summary.lucroPrejuizoRealizado !== undefined && summary.lucroPrejuizoNaoRealizado !== null && summary.lucroPrejuizoNaoRealizado !== undefined
+  ? [{ label: 'Realizado', value: summary.lucroPrejuizoRealizado }, { label: 'Não realizado', value: summary.lucroPrejuizoNaoRealizado }]
+  : [];

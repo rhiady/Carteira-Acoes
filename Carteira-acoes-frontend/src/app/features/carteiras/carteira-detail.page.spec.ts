@@ -54,7 +54,7 @@ describe('CarteiraDetailPage', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('.analytics-currency-group')).toHaveLength(2);
-    expect(fixture.nativeElement.querySelectorAll('.chart-grid app-chart-panel')).toHaveLength(6);
+    expect(fixture.nativeElement.querySelectorAll('.chart-grid app-chart-panel')).toHaveLength(10);
     expect(fixture.nativeElement.textContent).toContain('- US$');
     const page = fixture.componentInstance as unknown as { resultPlotOptions: { bar: { colors: { ranges: unknown[] } } } };
     expect(page.resultPlotOptions.bar.colors.ranges).toHaveLength(3);

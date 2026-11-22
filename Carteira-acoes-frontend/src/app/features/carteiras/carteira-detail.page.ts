@@ -7,7 +7,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApexAxisChartSeries, ApexChart, ApexNonAxisChartSeries, ApexPlotOptions, ApexXAxis } from 'ng-apexcharts';
 import { formatMoney, formatSignedMoney, priceVariationPercent } from '../../core/formatters/financial.formatter';
-import { compositionItems, priceComparisonItems, resultItems } from '../../core/mappers/portfolio-analytics.mapper';
+import { compositionItems, priceComparisonItems, resultItems, walletComparisonItems, walletResultItems } from '../../core/mappers/portfolio-analytics.mapper';
 import { Moeda, Page, PosicaoAcao, ResumoCarteira } from '../../core/models/domain.models';
 import { AcaoService } from '../../core/services/acao.service';
 import { CarteiraService } from '../../core/services/carteira.service';
@@ -52,6 +52,8 @@ import { maintenanceError } from '../../core/services/maintenance-error';
               <app-chart-panel title="Composição por ação · {{ currency }}" [chart]="donutChart" [series]="compositionSeries(currency)" [labels]="compositionLabels(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="composition(currency).length > 0" [summary]="compositionSummary(currency)" emptyMessage="Ainda não há posições suficientes para exibir a composição." />
               <app-chart-panel title="Lucro / prejuízo por ação · {{ currency }}" [chart]="resultChart" [series]="resultSeries(currency)" [xaxis]="resultAxis(currency)" [plotOptions]="resultPlotOptions" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="results(currency).length > 0" [summary]="resultSummary(currency)" emptyMessage="Ainda não há resultados por ação para exibir." />
               <app-chart-panel title="Preço médio x cotação · {{ currency }}" [chart]="comparisonChart" [series]="comparisonSeries(currency)" [xaxis]="comparisonAxis(currency)" [loading]="analyticsLoading()" [error]="analyticsError()" [retryable]="!!analyticsError()" (retry)="loadAnalyticsPositions()" [hasData]="comparisons(currency).length > 0" [summary]="comparisonSummary(currency)" emptyMessage="Ainda não há preço médio e cotação comparáveis." />
+              <app-chart-panel title="Investido x valor atual · {{ currency }}" [chart]="comparisonChart" [series]="summaryComparisonSeries(currency)" [xaxis]="summaryComparisonAxis(currency)" [hasData]="summaryComparisons(currency).length > 0" [summary]="summaryComparisonSummary(currency)" emptyMessage="Resumo financeiro indisponível." />
+              <app-chart-panel title="Resultado realizado x não realizado · {{ currency }}" [chart]="comparisonChart" [series]="summaryResultSeries(currency)" [xaxis]="summaryResultAxis(currency)" [hasData]="summaryResults(currency).length > 0" [summary]="summaryResultSummary(currency)" emptyMessage="Resumo de resultado indisponível." />
             </div>
           </section>
         }
@@ -162,6 +164,14 @@ export class CarteiraDetailPage {
   protected comparisonSeries(currency: Moeda): ApexAxisChartSeries { const items = this.comparisons(currency); return [{ name: 'Preço médio', data: items.map((item) => item.average) }, { name: 'Cotação atual', data: items.map((item) => item.current) }]; }
   protected comparisonAxis(currency: Moeda): ApexXAxis { return { categories: this.comparisons(currency).map((item) => item.label) }; }
   protected comparisonSummary(currency: Moeda) { return this.comparisons(currency).map((item) => `${item.label}: preço médio ${this.money(item.average, item.moeda)}; cotação atual ${this.money(item.current, item.moeda)}`); }
+  protected summaryComparisons(currency: Moeda) { const summary = this.summary()?.resumosPorMoeda.find((item) => item.moeda === currency); return summary ? walletComparisonItems(summary) : []; }
+  protected summaryResults(currency: Moeda) { const summary = this.summary()?.resumosPorMoeda.find((item) => item.moeda === currency); return summary ? walletResultItems(summary) : []; }
+  protected summaryComparisonSeries(currency: Moeda): ApexAxisChartSeries { return [{ name: 'Valor', data: this.summaryComparisons(currency).map((item) => item.value) }]; }
+  protected summaryResultSeries(currency: Moeda): ApexAxisChartSeries { return [{ name: 'Resultado', data: this.summaryResults(currency).map((item) => item.value) }]; }
+  protected summaryComparisonAxis(currency: Moeda): ApexXAxis { return { categories: this.summaryComparisons(currency).map((item) => item.label) }; }
+  protected summaryResultAxis(currency: Moeda): ApexXAxis { return { categories: this.summaryResults(currency).map((item) => item.label) }; }
+  protected summaryComparisonSummary(currency: Moeda) { return this.summaryComparisons(currency).map((item) => `${item.label}: ${this.money(item.value, currency)}`); }
+  protected summaryResultSummary(currency: Moeda) { return this.summaryResults(currency).map((item) => `${item.label}: ${this.signedMoney(item.value, currency)}`); }
   protected investedTotal(currency: Moeda) { return this.investedTotals().get(currency) ?? null; }
   protected investedDescription(currency: Moeda) { return this.analyticsLoading() ? 'Carregando posições completas…' : this.investedTotal(currency) === null ? 'total indisponível' : `soma das posições em ${currency}`; }
 

@@ -47,6 +47,17 @@ describe('AcoesPage', () => {
     expect(feedback.success).toHaveBeenCalledWith('Ação cadastrada com sucesso.');
   });
 
+  it('normalizes ticker fields while typing', () => {
+    const fixture: ComponentFixture<AcoesPage> = TestBed.createComponent(AcoesPage); fixture.detectChanges();
+    const component = fixture.componentInstance as unknown as { normalizeTicker(control: unknown): void; createForm: { controls: { ticker: { setValue(value: string): void; value: string } } } };
+    const createTicker = fixture.nativeElement.querySelector('#ticker-create') as HTMLInputElement;
+    createTicker.value = 'petr4';
+    createTicker.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(createTicker.value).toBe('PETR4');
+    expect(component.createForm.controls.ticker.value).toBe('PETR4');
+  });
+
   it('keeps validation feedback and backend errors in the action form', () => {
     const fixture: ComponentFixture<AcoesPage> = TestBed.createComponent(AcoesPage); fixture.detectChanges();
     const component = fixture.componentInstance as unknown as { create(): void; createForm: { patchValue(value: object): void } };

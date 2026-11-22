@@ -89,6 +89,13 @@ Histórico SHALL usar somente valores retornados pelo backend. Para cada registr
 - **WHEN** a resposta paginada não representa todas as posições
 - **THEN** a interface não apresenta ranking ou composição global como completa
 
+### Requirement: Operation cash-flow visualization
+The operation experience SHALL visualize complete published operation history as monthly cash flow and traded volume by asset, grouped by currency and using `valorLiquido`. Purchases SHALL be represented as outflow and sales as inflow; incomplete history SHALL be identified as partial.
+
+#### Scenario: Operations by currency
+- **WHEN** a wallet has BRL and USD operations
+- **THEN** the cash-flow and volume views remain separate and provide accessible textual summaries.
+
 ### Requirement: Experiência é responsiva e acessível
 Compra, Venda e Analytics SHALL funcionar em desktop e mobile, com foco visível, labels, contraste, estados vazios/loading/erro, contexto textual para gráficos, reduced motion e sem comunicação de ganho/perda apenas por cor.
 

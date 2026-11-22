@@ -9,10 +9,13 @@ import { OperacaoService } from '../../core/services/operacao.service';
 import { catchError, forkJoin, of } from 'rxjs';
 import { EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent } from '../../shared/components/ui-states.component';
 import { OperationDetailDialogComponent } from '../../shared/components/operation-detail-dialog.component';
+import { ChartPanelComponent } from '../../shared/components/chart-panel.component';
+import { cashFlowItems, tradedVolumeItems } from '../../core/mappers/operation-analytics.mapper';
+import { ApexAxisChartSeries, ApexChart, ApexXAxis } from 'ng-apexcharts';
 
 @Component({
   selector: 'app-historico-page',
-  imports: [RouterLink, CurrencyPipe, DatePipe, MatButtonModule, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent],
+  imports: [RouterLink, CurrencyPipe, DatePipe, MatButtonModule, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginationComponent, ChartPanelComponent],
   template: `
     <section class="operation-history-page"><div class="page-heading"><div><p class="eyebrow">Histórico financeiro</p><h1>Operações</h1><p>Compras e vendas registradas para esta carteira.</p></div><a routerLink="../">Voltar à carteira</a></div>
       @if (loading()) { <app-loading-state message="Carregando operações…" /> }
@@ -21,6 +24,7 @@ import { OperationDetailDialogComponent } from '../../shared/components/operatio
       @else {
         <div class="operation-filter-bar" aria-label="Filtrar operações por tipo"><span>Mostrar</span>@for (option of filters; track option.value) { <button type="button" [class.operation-filter--active]="filter() === option.value" [attr.aria-pressed]="filter() === option.value" (click)="filter.set(option.value)">{{ option.label }}</button> }</div>
         <section class="operation-page-summary" aria-label="Resumo da página atual"><div class="section-heading"><div><h2>Resumo</h2><p>Valores desta página; a API não fornece totais históricos por tipo.</p></div></div><div class="operation-summary-grid">@for (summary of summaries(); track summary.moeda) { <article><span>Total comprado · {{ summary.moeda }}</span><strong>{{ summary.compras | currency:summary.moeda }}</strong></article><article><span>Total vendido · {{ summary.moeda }}</span><strong>{{ summary.vendas | currency:summary.moeda }}</strong></article><article><span>Custos · {{ summary.moeda }}</span><strong>{{ summary.custos | currency:summary.moeda }}</strong></article> }</div></section>
+        @for (currency of analyticsCurrencies(); track currency) { <section class="analytics-currency-group" [attr.aria-label]="'Análise de operações em ' + currency"><div class="currency-section-heading"><h2>Fluxo de operações · {{ currency }}</h2><p>Valores líquidos oficiais, sem conversão de moeda.</p></div><div class="chart-grid"><app-chart-panel title="Fluxo mensal" [chart]="operationChart" [series]="cashFlowSeries(currency)" [xaxis]="cashFlowAxis(currency)" [hasData]="cashFlow(currency).length > 0" [summary]="cashFlowSummary(currency)" emptyMessage="Ainda não há operações para exibir." /><app-chart-panel title="Volume por ativo" [chart]="operationChart" [series]="volumeSeries(currency)" [xaxis]="volumeAxis(currency)" [hasData]="volume(currency).length > 0" [summary]="volumeSummary(currency)" emptyMessage="Ainda não há operações para exibir." /></div></section> }
         <div class="section-heading"><div><h2>Histórico</h2><p>{{ filteredItems().length }} registro{{ filteredItems().length === 1 ? '' : 's' }} nesta página.</p></div></div>
         @if (!filteredItems().length) { <app-empty-state message="Não há operações deste tipo nesta página." /> }
         @else { <div class="operation-history-list">@for (item of filteredItems(); track item.id) { <article class="operation-history-item"><div class="operation-history-item__identity"><span [class]="item.tipo === 'VENDA' ? 'operation-chip operation-chip--sale' : 'operation-chip'">{{ item.tipo }}</span><h3>{{ item.ticker }}</h3><p>{{ item.nomeEmpresa }}</p><small>{{ item.mercado }} · {{ item.moeda }}</small><small>{{ item.quantidade }} × {{ item.precoUnitario | currency:item.moeda }}</small></div><dl><div><dt>Valor bruto</dt><dd>{{ item.valorBruto | currency:item.moeda }}</dd></div><div><dt>Valor líquido</dt><dd>{{ item.valorLiquido | currency:item.moeda }}</dd></div><div><dt>Custos</dt><dd>{{ costs(item) | currency:item.moeda }}</dd></div>@if (item.tipo === 'COMPRA') { @let position = purchasePosition(item); <div><dt>Preço médio de compra</dt><dd>{{ position?.precoMedio === null || position === null ? '—' : (position.precoMedio | currency:position.moeda) }}</dd></div> }<div><dt>Data e hora</dt><dd>{{ item.dataHora | date:'short' }}</dd></div></dl><button mat-button type="button" (click)="openDetails(item)">Ver operação<span class="sr-only"> de {{ item.ticker }}</span></button></article> }</div> }
@@ -35,6 +39,7 @@ export class HistoricoPage {
   protected readonly carteiraId = Number(this.route.snapshot.paramMap.get('id'));
   protected readonly page = signal<Page<Operacao> | null>(null);
   protected readonly positionsByAsset = signal<ReadonlyMap<number, PosicaoAcao>>(new Map());
+  protected readonly analyticsOperations = signal<readonly Operacao[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly filter = signal<TipoOperacao | 'TODAS'>('TODAS');
@@ -54,6 +59,8 @@ export class HistoricoPage {
     });
     return [...grouped.values()];
   });
+  protected readonly analyticsCurrencies = computed<Moeda[]>(() => [...new Set(this.analyticsOperations().map((item) => item.moeda))]);
+  protected readonly operationChart: ApexChart = { type: 'bar', height: 280, toolbar: { show: false } };
   constructor() { this.load(); }
   protected load(index = 0) {
     this.loading.set(true);
@@ -61,10 +68,12 @@ export class HistoricoPage {
     forkJoin({
       history: this.service.history(this.carteiraId, { page: index, size: 20 }),
       positions: this.carteiras.allPositions(this.carteiraId).pipe(catchError(() => of([]))),
+      analytics: this.service.allHistory(this.carteiraId).pipe(catchError(() => of([]))),
     }).subscribe({
-      next: ({ history, positions }) => {
+      next: ({ history, positions, analytics }) => {
         this.page.set(history);
         this.positionsByAsset.set(new Map(positions.map((position) => [position.acaoId, position])));
+        this.analyticsOperations.set(analytics);
         this.loading.set(false);
       },
       error: (httpError: { message?: string }) => {
@@ -74,6 +83,14 @@ export class HistoricoPage {
     });
   }
   protected purchasePosition(item: Operacao) { return item.tipo === 'COMPRA' ? this.positionsByAsset().get(item.acaoId) ?? null : null; }
+  protected cashFlow(currency: Moeda) { return cashFlowItems(this.analyticsOperations(), currency); }
+  protected volume(currency: Moeda) { return tradedVolumeItems(this.analyticsOperations(), currency); }
+  protected cashFlowSeries(currency: Moeda): ApexAxisChartSeries { return [{ name: 'Fluxo líquido', data: this.cashFlow(currency).map((item) => item.value) }]; }
+  protected volumeSeries(currency: Moeda): ApexAxisChartSeries { return [{ name: 'Volume líquido', data: this.volume(currency).map((item) => item.value) }]; }
+  protected cashFlowAxis(currency: Moeda): ApexXAxis { return { categories: this.cashFlow(currency).map((item) => item.label) }; }
+  protected volumeAxis(currency: Moeda): ApexXAxis { return { categories: this.volume(currency).map((item) => item.label) }; }
+  protected cashFlowSummary(currency: Moeda) { return this.cashFlow(currency).map((item) => `${item.label}: ${item.value < 0 ? 'saída' : 'entrada'} ${Math.abs(item.value).toLocaleString('pt-BR', { style: 'currency', currency })}`); }
+  protected volumeSummary(currency: Moeda) { return this.volume(currency).map((item) => `${item.label}: ${item.value.toLocaleString('pt-BR', { style: 'currency', currency })}`); }
   protected costs(item: Operacao) { return item.corretagem + item.impostos + item.valorAdicional; }
   protected openDetails(item: Operacao) { this.dialog.open(OperationDetailDialogComponent, { data: item, autoFocus: 'first-tabbable', width: 'min(100% - 2rem, 34rem)' }); }
 }

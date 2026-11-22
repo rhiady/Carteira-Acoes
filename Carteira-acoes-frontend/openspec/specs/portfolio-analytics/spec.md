@@ -39,6 +39,13 @@ The system SHALL show the result of each stock in a portfolio as a horizontal co
 - **WHEN** portfolio positions contain positive and negative results
 - **THEN** each item presents its ticker, signed formatted result and a visually distinct positive or negative treatment.
 
+### Requirement: Authoritative wallet summary comparisons
+For each returned currency, the wallet SHALL visualize current versus invested value and realized versus unrealized result from the published summary fields, alongside textual alternatives. It MUST NOT combine currencies or replace missing values with zero.
+
+#### Scenario: Multi-currency summary
+- **WHEN** a wallet returns BRL and USD summaries
+- **THEN** each currency has independent comparison and result visualizations.
+
 ### Requirement: Dashboard financeiro conservador
 The dashboard SHALL prioritize portfolio value, lucro/prejuízo, asset count and asset-based charts over administrative counts. It MUST render “—” or an empty state for each unavailable authoritative metric and MUST NOT synthesize financial values. The Dashboard SHALL present these metrics and charts in a clear investment-oriented hierarchy with explicit currency sections and contextual actions.
 

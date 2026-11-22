@@ -122,4 +122,18 @@ describe('operation forms', () => {
     const summary = fixture.nativeElement.querySelector('.trade-summary--sale strong') as HTMLElement | null;
     expect(summary?.textContent).toMatch(/23[,.]00/);
   });
+
+  it('labels the sale estimate as local and non-authoritative', () => {
+    const fixture: ComponentFixture<VendaPage> = TestBed.createComponent(VendaPage); fixture.detectChanges();
+    const page = fixture.componentInstance as unknown as { form: { patchValue(value: object): void } };
+    page.form.patchValue({ acaoId: 9, quantidade: 1 }); fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.trade-summary--sale')?.textContent).toContain('Estimativa local');
+    expect(fixture.nativeElement.querySelector('.trade-summary--sale')?.textContent).toContain('API confirma os valores');
+  });
+
+  it('has no detectable accessibility violations in the sale flow', async () => {
+    const fixture: ComponentFixture<VendaPage> = TestBed.createComponent(VendaPage); fixture.detectChanges();
+    expect((await axe.run(fixture.nativeElement, { rules: { 'color-contrast': { enabled: false } } })).violations).toEqual([]);
+  });
 });

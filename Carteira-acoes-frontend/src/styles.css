@@ -137,31 +137,46 @@ form:not([mat-dialog-content]) button .mdc-button__label, section > button .mdc-
 :root {
   --surface-page: #f7f8f9;
   --surface-base: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-hover: #f0f3f5;
-  --border-subtle: #dbe1e5;
+  --surface-raised: #f0f3f5;
+  --surface-hover: #e7ecef;
+  --border-subtle: #c8d1d7;
   --text-primary: #17242d;
-  --text-secondary: #5b6871;
+  --text-secondary: #4f5f6a;
   --focus-ring: #002fa7;
-  --radius-control: 3px;
-}
-[data-theme='dark'] {
-  --surface-page: #11181e;
-  --surface-base: #182129;
-  --surface-raised: #1d2932;
-  --surface-hover: #26333d;
-  --border-subtle: #34444f;
-  --text-primary: #eef2f4;
-  --text-secondary: #b9c4cb;
-  --focus-ring: #a9c0ff;
   --color-canvas: var(--surface-page);
   --color-card: var(--surface-base);
   --color-panel: var(--surface-raised);
   --color-rule: var(--border-subtle);
   --color-ink: var(--text-primary);
   --color-muted: var(--text-secondary);
-  --color-success: #70c99b;
-  --color-danger: #ef9a91;
+  --color-blue: #002fa7;
+  --color-blue-hover: #00227a;
+  --color-success: #146b43;
+  --color-danger: #b42318;
+  --color-neutral: #4f5f6a;
+  --radius-control: 0;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+[data-theme='dark'] {
+  --surface-page: #101715;
+  --surface-base: #171f1c;
+  --surface-raised: #202a25;
+  --surface-hover: #29342e;
+  --border-subtle: #46534c;
+  --text-primary: #f0f5f1;
+  --text-secondary: #c2cbc4;
+  --focus-ring: #c6ff4a;
+  --color-canvas: var(--surface-page);
+  --color-card: var(--surface-base);
+  --color-panel: var(--surface-raised);
+  --color-rule: var(--border-subtle);
+  --color-ink: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-blue: #c6ff4a;
+  --color-blue-hover: #a8e52e;
+  --color-success: #83dca4;
+  --color-danger: #ffaca3;
+  --color-neutral: #c2cbc4;
 }
 body { background: var(--surface-page); color: var(--text-primary); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline-color: var(--focus-ring); }
@@ -186,13 +201,16 @@ th { background: color-mix(in srgb, var(--surface-base) 88%, var(--surface-hover
 tbody tr:hover { background: var(--surface-hover); }
 th:not(:first-child), td:not(:first-child) { text-align: right; }
 td:first-child, th:first-child { text-align: left; }
-.ui-state { border-style: solid; border-left: 3px solid var(--color-blue); min-height: 7rem; padding: var(--space-5); }
+.ui-state { border-style: solid; min-height: 7rem; padding: var(--space-5); }
 .empty-state h2 { font-size: 1.2rem; letter-spacing: -.025em; }
-.error-state { border-left-color: var(--color-danger); }
+.error-state { border-color: var(--color-danger); }
 .mat-mdc-dialog-container .mat-mdc-dialog-surface, .mat-mdc-menu-panel, .mat-mdc-select-panel { background: var(--surface-raised); color: var(--text-primary); }
 .mat-mdc-dialog-title, .mat-mdc-dialog-actions { border-color: var(--border-subtle); }
 .mat-mdc-button, .mat-mdc-outlined-button { --mdc-text-button-label-text-color: var(--color-blue); --mdc-outlined-button-label-text-color: var(--text-primary); --mdc-outlined-button-outline-color: var(--border-subtle); }
-.mat-mdc-unelevated-button, .mat-mdc-raised-button { --mdc-filled-button-container-color: var(--color-blue); --mdc-filled-button-label-text-color: #fff; }
+.mat-mdc-unelevated-button, .mat-mdc-raised-button { --mdc-filled-button-container-color: var(--color-blue); --mdc-filled-button-label-text-color: var(--surface-base); }
+.mat-mdc-unelevated-button:disabled, .mat-mdc-raised-button:disabled { --mdc-filled-button-disabled-container-color: var(--surface-raised); --mdc-filled-button-disabled-label-text-color: var(--text-secondary); border: 1px solid var(--border-subtle); color: var(--text-secondary); opacity: 1; }
+.purchase-actions button:disabled { background: var(--surface-raised) !important; border-color: var(--border-subtle) !important; color: var(--text-secondary) !important; opacity: 1; }
+.purchase-actions button:disabled .mdc-button__label { color: var(--text-secondary) !important; }
 .confirm-dialog__message { color: var(--text-secondary); line-height: 1.55; max-width: 58ch; overflow-wrap: anywhere; }
 .confirm-dialog--destructive .mat-mdc-unelevated-button { --mdc-filled-button-container-color: var(--color-danger); --mdc-filled-button-label-text-color: #fff; }
 .portfolio-detail-page { gap: var(--space-8); }
@@ -204,6 +222,8 @@ td:first-child, th:first-child { text-align: left; }
 .portfolio-empty-state { display: grid; gap: var(--space-3); justify-items: start; }
 .portfolio-detail-page .position-card__actions > a[mat-flat-button] { background: var(--color-blue); color: #fff; }
 .portfolio-detail-page .position-card__actions > a[mat-flat-button]:hover { background: var(--color-blue-hover); }
+.trade-asset { background: var(--surface-raised); border: 1px solid var(--border-subtle); }
+.trade-asset__label { color: var(--color-blue) !important; }
 @media (max-width: 900px) {
   .portfolio-summary-card { grid-template-columns: 1fr; }
   .portfolio-summary-card__actions { align-items: start; flex-direction: row; flex-wrap: wrap; }

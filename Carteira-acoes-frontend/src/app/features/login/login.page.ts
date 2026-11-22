@@ -13,12 +13,10 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
     <main class="login-page" id="main-content"><app-theme-toggle class="auth-theme-toggle" />
       <section class="login-shell" aria-labelledby="login-title">
         <div class="login-identity">
-          <p class="login-rule" aria-hidden="true"></p>
           <p class="login-brand">Carteira Ações</p>
           <p class="login-context">Gestão de investimentos</p>
         </div>
         <div class="login-panel">
-          <p class="login-index" aria-hidden="true">01 / acesso</p>
           <h1 id="login-title">Entrar</h1>
           <p class="login-subtitle">Acesse sua conta</p>
           <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -47,7 +45,6 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
             <button class="login-submit" mat-flat-button type="submit" [disabled]="loading()">
               {{ loading() ? 'Entrando…' : 'Entrar' }}
             </button>
-            <p class="login-note">Acesso simples aos seus dados de investimento.</p>
             <p class="login-register">Ainda não tem uma conta? <a routerLink="/cadastro">Criar conta</a></p>
           </form>
         </div>
@@ -59,11 +56,9 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
     .login-page { align-items: center; background: var(--surface-page); display: flex; min-height: 100dvh; padding: clamp(1.5rem, 5vw, 4rem); }
     .login-shell { background: var(--surface-base); border: 1px solid var(--border-subtle); display: grid; grid-template-columns: minmax(12rem, .8fr) minmax(18rem, 1fr); margin: auto; max-width: 58rem; width: 100%; }
     .login-identity { border-right: 1px solid var(--color-rule); padding: clamp(2rem, 5vw, 4rem); }
-    .login-rule { background: var(--color-red, #e4002b); height: 3.5rem; margin: 0 0 2rem; width: 2px; }
     .login-brand { color: var(--color-ink); font-size: clamp(1.4rem, 2.8vw, 2rem); font-weight: 800; letter-spacing: -.045em; margin: 0; }
-    .login-context, .login-index, .login-note { color: var(--color-muted); font-size: .78rem; margin: .7rem 0 0; }
+    .login-context { color: var(--color-muted); font-size: .78rem; margin: .7rem 0 0; }
     .login-panel { max-width: 26rem; padding: clamp(2rem, 5vw, 4rem); width: 100%; }
-    .login-index { margin: 0 0 2.5rem; text-transform: uppercase; letter-spacing: .1em; }
     h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.06em; margin: 0; }
     .login-subtitle { color: var(--color-muted); margin: .5rem 0 2rem; }
     form { display: grid; gap: 1.25rem; }
@@ -105,8 +100,8 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle.compo
       --login-submit-active-background: #7899e5;
       --login-submit-disabled-foreground: #fff;
     }
-    .login-note { border-top: 1px solid var(--color-rule); padding-top: 1rem; }.login-register { color: var(--color-muted); font-size: .85rem; margin: 0; }.login-register a { color: var(--color-blue); font-weight: 750; }
-    @media (max-width: 640px) { .login-page { padding: 1rem; }.login-shell { display: block; }.login-identity { border-bottom: 1px solid var(--color-rule); border-right: 0; padding: 1.5rem; }.login-rule { height: 2rem; margin-bottom: 1rem; }.login-panel { box-sizing: border-box; max-width: none; padding: 1.5rem; } }
+    .login-register { border-top: 1px solid var(--color-rule); color: var(--color-muted); font-size: .85rem; margin: 0; padding-top: 1rem; }.login-register a { color: var(--color-blue); font-weight: 750; }
+    @media (max-width: 640px) { .login-page { padding: 1rem; }.login-shell { display: block; }.login-identity { border-bottom: 1px solid var(--color-rule); border-right: 0; padding: 1.5rem; }.login-panel { box-sizing: border-box; max-width: none; padding: 1.5rem; } }
   `
 })
 export class LoginPage {

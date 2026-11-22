@@ -23,10 +23,14 @@ describe('ThemeService', () => {
 
   it('toggles between light and dark without changing layout state', () => {
     const service = TestBed.inject(ThemeService);
+    const overlay = TestBed.inject(OverlayContainer).getContainerElement();
     service.setTheme('light');
+    expect(document.documentElement.dataset['theme']).toBe('light');
+    expect(overlay.dataset['theme']).toBe('light');
     service.toggle();
     expect(service.isDark()).toBe(true);
     service.toggle();
     expect(service.isDark()).toBe(false);
+    expect(document.documentElement.style.colorScheme).toBe('light');
   });
 });

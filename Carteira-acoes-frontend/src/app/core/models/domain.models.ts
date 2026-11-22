@@ -3,6 +3,7 @@ export type Moeda = 'BRL' | 'USD';
 export type TipoOperacao = 'COMPRA' | 'VENDA';
 
 export interface Usuario { id: number; nome: string; email: string; createdAt: string; updatedAt: string; }
+export interface UsuarioResumo { id: number; login: string; papel: string; ativo: boolean; }
 export interface LoginRequest { login: string; password: string; }
 export interface LoginResponse { token: string; tipo: 'Bearer'; expiresIn: number; }
 export interface PasswordChangeRequest { password: string; }
@@ -19,7 +20,7 @@ export interface CarteiraRequest { nome: string; usuarioId: number; corretoraId:
 export interface CarteiraUpdateRequest { nome: string; }
 export interface CarteiraAcao { id: number; carteiraId: number; acaoId: number; ticker: string; quantidade: number; version: number; }
 export interface PosicaoAcao { carteiraId: number; acaoId: number; ticker: string; nomeEmpresa: string; mercado: Mercado; moeda: Moeda; quantidade: number; cotacaoAtual: number | null; dataHoraCotacao: string | null; valorAtual: number | null; precoMedio: number | null; valorInvestidoAtual?: number | null; valorTotalComprado?: number | null; valorTotalVendido?: number | null; cotacaoEmBrl?: number | null; valorAtualEmBrl?: number | null; taxaUsdBrl?: number | null; dataHoraTaxaUsdBrl?: string | null; precoMedioVenda: number | null; lucroPrejuizoRealizado: number | null; lucroPrejuizoNaoRealizado: number | null; lucroPrejuizo: number | null; }
-export interface ResumoPorMoeda { moeda: Moeda; valorAtual: number | null; lucroPrejuizo: number | null; }
+export interface ResumoPorMoeda { moeda: Moeda; valorAtual: number | null; lucroPrejuizo: number | null; valorInvestidoAtual?: number | null; valorTotalComprado?: number | null; valorTotalVendido?: number | null; lucroPrejuizoRealizado?: number | null; lucroPrejuizoNaoRealizado?: number | null; }
 export interface ResumoCarteira { carteiraId: number; nome: string; quantidadeAtivos: number; resumosPorMoeda: ResumoPorMoeda[]; }
 export interface HistoricoCotacao { id: number; acaoId: number; cotacao: number; dataHora: string; }
 export interface HistoricoCotacaoParams extends PageParams { inicio?: string; fim?: string; }

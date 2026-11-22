@@ -83,6 +83,13 @@ The shell SHALL identify the authenticated person discreetly and Dashboard, wall
 - **WHEN** the authenticated identity changes
 - **THEN** affected financial surfaces reload or clear their data and do not display stale values from the previous identity
 
+### Requirement: Industrial investor experience
+Login, wallets and operations SHALL use a cohesive dark Industrial visual system with high-contrast semantic states, visible focus, reduced-motion support and responsive Angular Material controls. It SHALL not fabricate financial content.
+
+#### Scenario: Investor uses dark theme
+- **WHEN** an investor views login, wallets or operations in dark mode
+- **THEN** data, controls, focus and error states remain legible and actionable without relying only on color.
+
 ### Requirement: Access and registration remain responsive and accessible
 Login and registration SHALL remain operable by keyboard and assistive technology, preserve visible focus and associated validation messages, and remain usable at desktop, notebook, tablet and mobile widths without horizontal overflow.
 

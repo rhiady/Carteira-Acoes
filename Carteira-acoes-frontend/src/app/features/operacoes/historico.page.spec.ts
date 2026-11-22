@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import axe from 'axe-core';
 import { PosicaoAcao } from '../../core/models/domain.models';
 import { CarteiraService } from '../../core/services/carteira.service';
 import { OperacaoService } from '../../core/services/operacao.service';
@@ -17,13 +18,15 @@ describe('HistoricoPage', () => {
   const allPositions = vi.fn<() => Observable<readonly PosicaoAcao[]>>(() => of([
     { carteiraId: 7, acaoId: 2, ticker: 'AAPL', nomeEmpresa: 'Apple', mercado: 'EUA' as const, moeda: 'USD' as const, quantidade: 2, cotacaoAtual: 120, dataHoraCotacao: '2026-09-06T17:00:00Z', valorAtual: 240, precoMedio: 95, precoMedioVenda: 110, lucroPrejuizoRealizado: 0, lucroPrejuizoNaoRealizado: 50, lucroPrejuizo: 50 },
   ] as PosicaoAcao[]));
+  const allHistory = vi.fn(() => of([]));
 
   beforeEach(() => {
     history.mockClear();
     allPositions.mockClear();
+    allHistory.mockClear(); allHistory.mockReturnValue(of([]));
     TestBed.configureTestingModule({ providers: [
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: new Map([['id', '7']]) } } },
-      { provide: OperacaoService, useValue: { history } },
+      { provide: OperacaoService, useValue: { history, allHistory } },
       { provide: CarteiraService, useValue: { allPositions } },
     ] });
   });
@@ -83,5 +86,11 @@ describe('HistoricoPage', () => {
     expect(fixture.nativeElement.textContent).toContain('AAPL');
     expect(fixture.nativeElement.textContent).toContain('Preço médio de compra');
     expect(fixture.nativeElement.textContent).toContain('—');
+  });
+
+  it('has no detectable accessibility violations in the operation history', async () => {
+    const fixture: ComponentFixture<HistoricoPage> = TestBed.createComponent(HistoricoPage);
+    fixture.detectChanges();
+    expect((await axe.run(fixture.nativeElement, { rules: { 'color-contrast': { enabled: false } } })).violations).toEqual([]);
   });
 });

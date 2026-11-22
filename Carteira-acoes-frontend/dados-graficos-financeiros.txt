@@ -1,0 +1,318 @@
+GUIA DE DADOS PARA GRAFICOS FINANCEIROS
+=======================================
+
+Este documento descreve os dados já fornecidos pela API para montar a área
+financeira da carteira. Todas as rotas exigem o usuário autenticado e só
+retornam dados de carteiras às quais ele tem acesso.
+
+
+1. RESUMO FINANCEIRO DA CARTEIRA
+--------------------------------
+
+Endpoint:
+GET /api/carteiras/{carteiraId}/resumo
+
+Exemplo:
+GET /api/carteiras/1/resumo
+
+Resposta:
+{
+  "carteiraId": 1,
+  "nome": "Minha carteira",
+  "quantidadeAtivos": 4,
+  "resumosPorMoeda": [
+    {
+      "moeda": "BRL",
+      "valorAtual": 15200.50,
+      "lucroPrejuizo": 1400.50,
+      "valorInvestidoAtual": 13800.00,
+      "valorTotalComprado": 18000.00,
+      "valorTotalVendido": 4200.00,
+      "lucroPrejuizoRealizado": 600.00,
+      "lucroPrejuizoNaoRealizado": 800.50
+    },
+    {
+      "moeda": "USD",
+      "valorAtual": 1200.00,
+      "lucroPrejuizo": 80.00,
+      "valorInvestidoAtual": 1120.00,
+      "valorTotalComprado": 1500.00,
+      "valorTotalVendido": 300.00,
+      "lucroPrejuizoRealizado": 20.00,
+      "lucroPrejuizoNaoRealizado": 60.00
+    }
+  ]
+}
+
+Uso recomendado:
+- Cards: valor atual, total investido e lucro/prejuízo.
+- Barras: valor atual versus valor investido.
+- Pizza ou rosca: distribuição do patrimônio por moeda.
+- Barras empilhadas: lucro realizado versus não realizado.
+
+Campos:
+- moeda: BRL ou USD. Sempre use como agrupador financeiro.
+- valorAtual: valor de mercado atual dos ativos daquela moeda.
+- valorInvestidoAtual: custo das posições ainda abertas.
+- lucroPrejuizo: resultado total da posição, realizado e não realizado.
+- valorTotalComprado: soma de todas as compras.
+- valorTotalVendido: soma de todas as vendas.
+- lucroPrejuizoRealizado: resultado já consolidado nas vendas.
+- lucroPrejuizoNaoRealizado: resultado das posições ainda abertas.
+
+REGRA IMPORTANTE:
+Não some BRL e USD diretamente. Cada moeda deve aparecer em um gráfico,
+card ou série independente. Para consolidar tudo em reais, a API precisaria
+fornecer conversão cambial histórica ou uma regra explícita de conversão.
+
+
+2. ALOCACAO E RESULTADO POR ATIVO
+---------------------------------
+
+Endpoint:
+GET /api/carteiras/{carteiraId}/acoes?size=100
+
+Exemplo:
+GET /api/carteiras/1/acoes?size=100&sort=ticker,asc
+
+Resposta paginada:
+{
+  "content": [
+    {
+      "carteiraId": 1,
+      "acaoId": 10,
+      "ticker": "PETR4",
+      "nomeEmpresa": "PETROLEO BRASILEIRO S.A.",
+      "mercado": "BRASIL",
+      "moeda": "BRL",
+      "quantidade": 100,
+      "cotacaoAtual": 38.50,
+      "dataHoraCotacao": "2026-11-21T15:30:00Z",
+      "valorAtual": 3850.00,
+      "precoMedio": 34.00,
+      "lucroPrejuizoRealizado": 200.00,
+      "lucroPrejuizoNaoRealizado": 450.00,
+      "lucroPrejuizo": 650.00,
+      "valorInvestidoAtual": 3400.00,
+      "valorTotalComprado": 4500.00,
+      "valorTotalVendido": 1300.00
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 100,
+  "number": 0
+}
+
+Uso recomendado:
+- Gráfico de pizza/rosca de alocação:
+  rótulo = ticker
+  valor = valorAtual
+  agrupar antes por moeda.
+
+- Gráfico de barras de resultado por ativo:
+  eixo X = ticker
+  eixo Y = lucroPrejuizo
+  cores: positivo em verde; negativo em vermelho.
+
+- Comparativo de custo e patrimônio atual:
+  eixo X = ticker
+  série 1 = valorInvestidoAtual
+  série 2 = valorAtual
+
+- Gráfico de desempenho percentual:
+  percentual = (lucroPrejuizo / valorInvestidoAtual) * 100
+  Só calcular se valorInvestidoAtual for maior que zero.
+
+Observações:
+- O endpoint retorna apenas posições com quantidade maior que zero.
+- valorAtual, lucroPrejuizo e campos financeiros podem ser nulos quando
+  não existir cotação disponível para o ativo.
+- Para ações dos Estados Unidos, cotacaoEmBrl e valorAtualEmBrl podem ser
+  fornecidos com a taxa USD/BRL atual. Não use essa taxa para reconstruir
+  resultados históricos.
+
+
+3. FLUXO DE CAIXA: COMPRAS E VENDAS
+-----------------------------------
+
+Endpoint:
+GET /api/operacoes/carteiras/{carteiraId}?size=100
+
+Exemplo:
+GET /api/operacoes/carteiras/1?size=100&sort=dataHora,asc
+
+Resposta paginada:
+{
+  "content": [
+    {
+      "id": 101,
+      "carteiraId": 1,
+      "acaoId": 10,
+      "ticker": "PETR4",
+      "nomeEmpresa": "PETROLEO BRASILEIRO S.A.",
+      "mercado": "BRASIL",
+      "moeda": "BRL",
+      "tipo": "COMPRA",
+      "quantidade": 100,
+      "precoUnitario": 34.00,
+      "valorBruto": 3400.00,
+      "corretagem": 0.00,
+      "impostos": 0.00,
+      "valorAdicional": 0.00,
+      "valorLiquido": 3400.00,
+      "dataHora": "2026-10-01T13:00:00Z",
+      "createdAt": "2026-10-01T13:01:00Z"
+    }
+  ]
+}
+
+Uso recomendado:
+- Fluxo de caixa mensal:
+  agrupar dataHora por mês e moeda.
+  COMPRA = saída de caixa (valor negativo).
+  VENDA = entrada de caixa (valor positivo).
+  valor utilizado = valorLiquido.
+
+- Volume negociado por ativo:
+  agrupar por ticker e somar valorLiquido.
+
+- Histórico de operações:
+  usar dataHora, ticker, tipo, quantidade e valorLiquido em tabela ou linha
+  do tempo.
+
+REGRA IMPORTANTE:
+Use valorLiquido, pois ele já considera corretagem, impostos e valores
+adicionais. Não use valorBruto para representar o caixa efetivamente pago
+ou recebido.
+
+
+4. EVOLUCAO DA COTACAO DE CADA ATIVO
+------------------------------------
+
+Endpoint:
+GET /api/acoes/{acaoId}/historico?inicio={dataHora}&fim={dataHora}&size=100
+
+Exemplo:
+GET /api/acoes/10/historico?inicio=2026-10-01T00:00:00Z&fim=2026-11-21T23:59:59Z&size=100
+
+Resposta paginada:
+{
+  "content": [
+    {
+      "id": 501,
+      "acaoId": 10,
+      "cotacao": 34.00,
+      "dataHora": "2026-10-01T15:30:00Z"
+    },
+    {
+      "id": 502,
+      "acaoId": 10,
+      "cotacao": 38.50,
+      "dataHora": "2026-11-21T15:30:00Z"
+    }
+  ],
+  "totalElements": 2,
+  "totalPages": 1,
+  "size": 100,
+  "number": 0
+}
+
+Uso recomendado:
+- Gráfico de linha por ativo:
+  eixo X = dataHora
+  eixo Y = cotacao
+  série = ticker.
+
+- Variação percentual da cotação:
+  variacao = ((cotacaoFinal / cotacaoInicial) - 1) * 100
+
+Observações:
+- O histórico é de cotação, não de patrimônio da carteira.
+- Para comparar ativos, só compare ativos da mesma moeda sem conversão.
+- A paginação deve ser percorrida se o período possuir mais pontos que size.
+
+
+5. GRAFICO DE EVOLUCAO TOTAL DA CARTEIRA
+----------------------------------------
+
+Esse gráfico ainda NÃO possui endpoint pronto.
+
+Motivo:
+O histórico disponível é por ação, mas a evolução da carteira precisa
+considerar simultaneamente:
+- a quantidade mantida em cada data;
+- compras e vendas ocorridas em cada data;
+- a cotação histórica de cada ativo;
+- a moeda de cada ativo;
+- uma taxa cambial histórica, caso BRL e USD sejam consolidados.
+
+Não é recomendado calcular essa evolução apenas no frontend, pois isso
+replicaria regras financeiras e poderia divergir do cálculo do backend.
+
+Endpoint sugerido para uma próxima implementação:
+GET /api/carteiras/{carteiraId}/evolucao?inicio={data}&fim={data}&moeda=BRL
+
+Resposta sugerida:
+{
+  "carteiraId": 1,
+  "moeda": "BRL",
+  "pontos": [
+    {
+      "data": "2026-10-01",
+      "valorInvestido": 3400.00,
+      "valorMercado": 3400.00,
+      "lucroPrejuizo": 0.00
+    },
+    {
+      "data": "2026-11-21",
+      "valorInvestido": 3400.00,
+      "valorMercado": 3850.00,
+      "lucroPrejuizo": 450.00
+    }
+  ]
+}
+
+
+6. ORDEM RECOMENDADA PARA CARREGAR O DASHBOARD
+----------------------------------------------
+
+1. Buscar o resumo da carteira:
+   GET /api/carteiras/{id}/resumo
+
+2. Buscar posições ativas:
+   GET /api/carteiras/{id}/acoes?size=100
+
+3. Buscar operações para o fluxo de caixa:
+   GET /api/operacoes/carteiras/{id}?size=100
+
+4. Buscar histórico de cotação somente quando o usuário abrir o detalhe
+   de um ativo, evitando chamadas desnecessárias:
+   GET /api/acoes/{acaoId}/historico?inicio=...&fim=...&size=100
+
+
+7. TRATAMENTO DE DADOS AUSENTES
+-------------------------------
+
+- valorAtual nulo: exibir "Cotação indisponível" e não usar o item no
+  gráfico de patrimônio atual.
+- lucroPrejuizo nulo: não assumir zero; o resultado é desconhecido sem
+  cotação atual.
+- lista resumosPorMoeda vazia: exibir estado vazio da carteira.
+- content vazio: exibir estado vazio para o gráfico correspondente.
+- erro 503: exibir indisponibilidade temporária de cotação/câmbio e manter,
+  se possível, os demais gráficos já carregados.
+
+
+8. PAGINACAO
+------------
+
+Os endpoints de posições, operações e histórico retornam Page do Spring.
+Os dados ficam em content. Para carregar todos os itens, confira:
+- totalElements: quantidade total de registros;
+- totalPages: quantidade de páginas;
+- number: página atual, começando em zero;
+- size: tamanho da página.
+
+Para dashboards pequenos, use size=100. Caso a carteira possua mais dados,
+faça requisições por página e una apenas os registros necessários ao gráfico.

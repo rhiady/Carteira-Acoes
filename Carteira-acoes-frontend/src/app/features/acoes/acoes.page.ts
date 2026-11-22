@@ -22,12 +22,12 @@ import { AuthService } from '../../core/services/auth.service';
       @if (auth.hasAuthority('ROLE_ADMIN')) {
         <form class="search-form action-create-form" [formGroup]="createForm" (ngSubmit)="create()" novalidate>
           <div><h2>Cadastrar ação</h2><p class="helper-text">Adicione uma ação ao catálogo global. Isso não cria carteira nem operação.</p></div>
-          <div class="field-grid field-grid--asset"><div><label for="ticker-create">Ticker</label><input id="ticker-create" formControlName="ticker" placeholder="Ex.: PETR4" autocomplete="off" autocapitalize="characters" [attr.aria-invalid]="createSubmitted() && createForm.controls.ticker.invalid" [attr.aria-describedby]="createSubmitted() && createForm.controls.ticker.invalid ? 'ticker-create-error' : null">@if (createSubmitted() && createForm.controls.ticker.invalid) { <p id="ticker-create-error" class="error" role="alert">Informe o ticker.</p> }</div><div><label for="mercado-create">Mercado</label><select id="mercado-create" formControlName="mercado"><option value="BRASIL">Brasil</option><option value="EUA">EUA</option></select></div></div>
+          <div class="field-grid field-grid--asset"><div><label for="ticker-create">Ticker</label><input id="ticker-create" formControlName="ticker" placeholder="Ex.: PETR4" autocomplete="off" autocapitalize="characters" (input)="normalizeTicker(createForm.controls.ticker)" [attr.aria-invalid]="createSubmitted() && createForm.controls.ticker.invalid" [attr.aria-describedby]="createSubmitted() && createForm.controls.ticker.invalid ? 'ticker-create-error' : null">@if (createSubmitted() && createForm.controls.ticker.invalid) { <p id="ticker-create-error" class="error" role="alert">Informe o ticker.</p> }</div><div><label for="mercado-create">Mercado</label><select id="mercado-create" formControlName="mercado"><option value="BRASIL">Brasil</option><option value="EUA">EUA</option></select></div></div>
           @if (createError()) { <p class="error" role="alert">{{ createError() }}</p> }
           <div class="page-actions"><button mat-flat-button type="submit" [disabled]="creating()">{{ creating() ? 'Cadastrando ação…' : 'Cadastrar ação' }}</button></div>
         </form>
       }
-      <form class="search-form action-search" (ngSubmit)="search()"><label for="ticker-search">Buscar por ticker</label><input id="ticker-search" [formControl]="ticker" placeholder="Ex.: PETR4" aria-describedby="ticker-search-help" /><p id="ticker-search-help" class="helper-text">A busca abre o ativo existente; novas ações são fornecidas pela integração de cotações.</p><div class="page-actions"><button mat-stroked-button type="submit" [disabled]="ticker.invalid || searching()">{{ searching() ? 'Buscando…' : 'Buscar ação' }}</button><button mat-button type="button" (click)="clearSearch()">Limpar busca</button></div></form>
+      <form class="search-form action-search" (ngSubmit)="search()"><label for="ticker-search">Buscar por ticker</label><input id="ticker-search" [formControl]="ticker" placeholder="Ex.: PETR4" autocomplete="off" autocapitalize="characters" (input)="normalizeTicker(ticker)" aria-describedby="ticker-search-help" /><p id="ticker-search-help" class="helper-text">A busca abre o ativo existente; novas ações são fornecidas pela integração de cotações.</p><div class="page-actions"><button mat-stroked-button type="submit" [disabled]="ticker.invalid || searching()">{{ searching() ? 'Buscando…' : 'Buscar ação' }}</button><button mat-button type="button" (click)="clearSearch()">Limpar busca</button></div></form>
       @if (loading()) { <app-loading-state message="Carregando ações…" /> }
       @else if (error()) { <app-error-state [message]="error()" (retry)="load()" /> }
       @else {
@@ -105,6 +105,11 @@ export class AcoesPage {
   }
 
   protected clearSearch() { this.ticker.setValue(''); this.load(); }
+
+  protected normalizeTicker(control: FormControl<string>) {
+    const normalized = control.value.toUpperCase();
+    if (normalized !== control.value) control.setValue(normalized, { emitEvent: false });
+  }
 
   protected create() {
     if (this.creating()) return;
