@@ -2,8 +2,8 @@ package com.carteiraacoesbackend.services;
 
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Papel;
-import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
 import com.carteiraacoesbackend.dto.AlterarPapelRequest;
+import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
 import com.carteiraacoesbackend.dto.CadastroRequest;
 import com.carteiraacoesbackend.dto.UsuarioCreateRequest;
 import com.carteiraacoesbackend.dto.UsuarioResponse;
@@ -39,9 +39,7 @@ public class UsuarioService {
 
   @Autowired
   public UsuarioService(
-      UsuarioRepository repository,
-      UsuarioMapper mapper,
-      PasswordEncoder passwordEncoder) {
+      UsuarioRepository repository, UsuarioMapper mapper, PasswordEncoder passwordEncoder) {
     this.repository = repository;
     this.mapper = mapper;
     this.passwordEncoder = passwordEncoder;
@@ -103,7 +101,8 @@ public class UsuarioService {
   @Transactional
   public UsuarioResponse alterarPapel(Long id, AlterarPapelRequest request) {
     if (!isAdmin()) {
-      throw ApiException.forbidden("PAPEL_NAO_PERMITIDO", "Somente administradores podem alterar o papel.");
+      throw ApiException.forbidden(
+          "PAPEL_NAO_PERMITIDO", "Somente administradores podem alterar o papel.");
     }
     Usuario usuario = obterEntidade(id);
     usuario.setPapel(request.papel());
@@ -116,9 +115,12 @@ public class UsuarioService {
   }
 
   private boolean isAdmin() {
-    var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-    return authentication != null && authentication.getAuthorities().stream()
-        .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+    var authentication =
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+            .getAuthentication();
+    return authentication != null
+        && authentication.getAuthorities().stream()
+            .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
   }
 
   public Usuario obterEntidade(Long id) {

@@ -16,29 +16,28 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private final JsonMapper objectMapper;
+  private final JsonMapper objectMapper;
 
-    public RestAuthenticationEntryPoint(JsonMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+  public RestAuthenticationEntryPoint(JsonMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
-    @Override
-    public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException exception) throws IOException, ServletException {
+  @Override
+  public void commence(
+      HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+      throws IOException, ServletException {
 
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ErroResponse error =
-                new ErroResponse(
-                        OffsetDateTime.now(ZoneOffset.UTC),
-                        HttpServletResponse.SC_UNAUTHORIZED,
-                        "UNAUTHORIZED",
-                        "Usuário não autenticado.",
-                        request.getRequestURI());
+    ErroResponse error =
+        new ErroResponse(
+            OffsetDateTime.now(ZoneOffset.UTC),
+            HttpServletResponse.SC_UNAUTHORIZED,
+            "UNAUTHORIZED",
+            "Usuário não autenticado.",
+            request.getRequestURI());
 
-        objectMapper.writeValue(response.getOutputStream(), error);
-    }
+    objectMapper.writeValue(response.getOutputStream(), error);
+  }
 }

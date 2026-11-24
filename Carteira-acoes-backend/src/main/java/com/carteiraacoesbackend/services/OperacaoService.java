@@ -79,8 +79,7 @@ public class OperacaoService {
     Carteira carteira = carteiraService.obterEntidade(request.carteiraId());
     validarOwnership(carteira);
     if (request.acaoId() == null) {
-      throw ApiException.unprocessable(
-          "IDENTIFICACAO_ACAO_INVALIDA", "Informe acaoId.");
+      throw ApiException.unprocessable("IDENTIFICACAO_ACAO_INVALIDA", "Informe acaoId.");
     }
     Acao acao = acaoService.obterEntidade(request.acaoId());
     BigDecimal preco =

@@ -6,6 +6,7 @@ import com.carteiraacoesbackend.clients.PtaxClient;
 import com.carteiraacoesbackend.dto.integrations.PtaxQuoteResponse;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,7 @@ class CurrencyConversionServiceTest {
   void usesTheMostRecentValidPtaxSellingRateWithDecimalConversion() {
     ptaxClient.resposta =
         new PtaxQuoteResponse(
-            List.of(
+            Arrays.asList(
                 new PtaxQuoteResponse.PtaxQuote("5.1000", "2026-09-03 13:00:00"),
                 new PtaxQuoteResponse.PtaxQuote("5.2500", "2026-09-04 13:00:00")));
 
@@ -42,6 +43,31 @@ class CurrencyConversionServiceTest {
                 new PtaxQuoteResponse.PtaxQuote("0", "2026-09-04 13:00:00"),
                 new PtaxQuoteResponse.PtaxQuote("invalida", "data invalida")));
     assertThat(service.consultarTaxaAtual()).isEmpty();
+  }
+
+  @Test
+  void ignoresNullPtaxResponseValuesAndSupportsOffsetDateTimeInput() {
+    ptaxClient.resposta = null;
+    assertThat(service.consultarTaxaAtual()).isEmpty();
+
+    ptaxClient.resposta = new PtaxQuoteResponse(null);
+    assertThat(service.consultarTaxaAtual()).isEmpty();
+
+    ptaxClient.resposta =
+        new PtaxQuoteResponse(
+            Arrays.asList(
+                null, new PtaxQuoteResponse.PtaxQuote("5.10", "2026-09-04T13:00:00-03:00")));
+    assertThat(service.consultarTaxaAtual())
+        .hasValueSatisfying(taxa -> assertThat(taxa.valor()).isEqualByComparingTo("5.10"));
+  }
+
+  @Test
+  void returnsEmptyWhenConversionInputIsInvalid() {
+    TaxaUsdBrl taxa = new TaxaUsdBrl(new BigDecimal("5"), "BCB PTAX", OffsetDateTime.now());
+
+    assertThat(service.converter(null, java.util.Optional.of(taxa))).isEmpty();
+    assertThat(service.converter(new BigDecimal("-1"), java.util.Optional.of(taxa))).isEmpty();
+    assertThat(service.converter(BigDecimal.ONE, java.util.Optional.empty())).isEmpty();
   }
 
   private static final class StubPtaxClient implements PtaxClient {

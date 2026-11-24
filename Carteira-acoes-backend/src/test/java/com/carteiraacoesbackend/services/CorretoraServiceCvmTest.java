@@ -114,6 +114,45 @@ class CorretoraServiceCvmTest {
     assertEquals(0, repository.count());
   }
 
+  @Test
+  void rejectsDuplicateCnpjAndSupportsLookupAndDeletion() {
+    BrasilApiClient client =
+        new FakeBrasilApiClient(new BrasilApiCvmBrokerResponse("12345678000190", "1234", "ATIVA"));
+    CorretoraService service =
+        new CorretoraService(
+            repository, new CnpjFacade(client), new CvmFacade(client), new CorretoraMapper());
+
+    var created = service.criar(new CorretoraRequest("12.345.678/0001-90"));
+    assertEquals(created.id(), service.buscarPorCnpj("12.345.678/0001-90").id());
+    assertEquals(created.id(), service.buscarPorId(created.id()).id());
+    assertEquals(
+        1, service.listar(org.springframework.data.domain.Pageable.unpaged()).getTotalElements());
+
+    ApiException duplicate =
+        assertThrows(
+            ApiException.class, () -> service.criar(new CorretoraRequest("12345678000190")));
+    assertEquals("CNPJ_DUPLICADO", duplicate.getCode());
+
+    service.excluir(created.id());
+    assertEquals(0, repository.count());
+  }
+
+  @Test
+  void rejectsInvalidAndUnknownCnpjQueries() {
+    BrasilApiClient client = new FakeBrasilApiClient(null);
+    CorretoraService service =
+        new CorretoraService(
+            repository, new CnpjFacade(client), new CvmFacade(client), new CorretoraMapper());
+
+    ApiException invalid = assertThrows(ApiException.class, () -> service.buscarPorCnpj(null));
+    assertEquals("CNPJ_INVALIDO", invalid.getCode());
+    ApiException unknown =
+        assertThrows(ApiException.class, () -> service.buscarPorCnpj("12345678000190"));
+    assertEquals("CORRETORA_NAO_ENCONTRADA", unknown.getCode());
+    ApiException missing = assertThrows(ApiException.class, () -> service.buscarPorId(999L));
+    assertEquals("CORRETORA_NAO_ENCONTRADA", missing.getCode());
+  }
+
   private static final class FakeBrasilApiClient implements BrasilApiClient {
     private final BrasilApiCvmBrokerResponse registroCvm;
     private final BrasilApiCnpjResponse empresa;

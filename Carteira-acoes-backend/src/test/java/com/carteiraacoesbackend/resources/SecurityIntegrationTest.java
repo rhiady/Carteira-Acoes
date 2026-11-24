@@ -10,15 +10,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.carteiraacoesbackend.clients.BrasilApiClient;
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Papel;
-import com.carteiraacoesbackend.clients.BrasilApiClient;
 import com.carteiraacoesbackend.dto.integrations.BrasilApiCnpjResponse;
 import com.carteiraacoesbackend.dto.integrations.BrasilApiCvmBrokerResponse;
-import com.carteiraacoesbackend.repositories.AcaoRepository;
-import com.carteiraacoesbackend.repositories.CorretoraRepository;
 import com.carteiraacoesbackend.integrations.Cotacao;
 import com.carteiraacoesbackend.integrations.CotacaoAdapter;
+import com.carteiraacoesbackend.repositories.AcaoRepository;
+import com.carteiraacoesbackend.repositories.CorretoraRepository;
 import com.carteiraacoesbackend.repositories.UsuarioRepository;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -61,7 +61,8 @@ class SecurityIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"login\":\"user@test.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                .content(
+                    "{\"login\":\"user@test.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.senha").doesNotExist())
         .andExpect(jsonPath("$.papel").doesNotExist());
@@ -144,9 +145,11 @@ class SecurityIntegrationTest {
         .andExpect(status().isForbidden());
 
     org.assertj.core.api.Assertions.assertThat(usuarios.count()).isEqualTo(2);
-    org.assertj.core.api.Assertions.assertThat(usuarios.findById(target.getId()).orElseThrow().getPapel())
+    org.assertj.core.api.Assertions.assertThat(
+            usuarios.findById(target.getId()).orElseThrow().getPapel())
         .isEqualTo(Papel.USER);
-    org.assertj.core.api.Assertions.assertThat(usuarios.findById(target.getId()).orElseThrow().getEmail())
+    org.assertj.core.api.Assertions.assertThat(
+            usuarios.findById(target.getId()).orElseThrow().getEmail())
         .isEqualTo("user-target@test.com");
   }
 
@@ -184,7 +187,8 @@ class SecurityIntegrationTest {
         .perform(delete("/api/acoes/{id}", 1L).with(login("user-broker@test.com")).with(csrf()))
         .andExpect(status().isForbidden());
     mockMvc
-        .perform(delete("/api/corretoras/{id}", 1L).with(login("user-broker@test.com")).with(csrf()))
+        .perform(
+            delete("/api/corretoras/{id}", 1L).with(login("user-broker@test.com")).with(csrf()))
         .andExpect(status().isForbidden());
 
     org.assertj.core.api.Assertions.assertThat(corretoras.count()).isZero();
@@ -212,9 +216,7 @@ class SecurityIntegrationTest {
 
     mockMvc
         .perform(
-            post("/api/acoes/{id}/cotacao", 1L)
-                .with(login("user-quote@test.com"))
-                .with(csrf()))
+            post("/api/acoes/{id}/cotacao", 1L).with(login("user-quote@test.com")).with(csrf()))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.error").value("FORBIDDEN"));
   }
@@ -272,7 +274,8 @@ class SecurityIntegrationTest {
   void adminCanPromoteUser() throws Exception {
     mockMvc
         .perform(
-            post("/api/usuarios").with(user("admin").roles("ADMIN"))
+            post("/api/usuarios")
+                .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content(
                     "{\"login\":\"ana@test.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
@@ -280,7 +283,9 @@ class SecurityIntegrationTest {
 
     mockMvc
         .perform(
-            put("/api/usuarios/{id}/papel", usuarios.findByEmail("ana@test.com").orElseThrow().getId())
+            put(
+                    "/api/usuarios/{id}/papel",
+                    usuarios.findByEmail("ana@test.com").orElseThrow().getId())
                 .with(user("admin").roles("ADMIN"))
                 .with(csrf())
                 .contentType("application/json")
@@ -298,7 +303,9 @@ class SecurityIntegrationTest {
 
     mockMvc
         .perform(
-            put("/api/usuarios/{id}/papel", usuarios.findByEmail("target@test.com").orElseThrow().getId())
+            put(
+                    "/api/usuarios/{id}/papel",
+                    usuarios.findByEmail("target@test.com").orElseThrow().getId())
                 .with(login("user-promoter@test.com"))
                 .with(csrf())
                 .contentType("application/json")
@@ -321,7 +328,10 @@ class SecurityIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"login\":\"" + email + "\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                    .content(
+                        "{\"login\":\""
+                            + email
+                            + "\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

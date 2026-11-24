@@ -16,29 +16,28 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
-    private final JsonMapper objectMapper;
+  private final JsonMapper objectMapper;
 
-    public RestAccessDeniedHandler(JsonMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+  public RestAccessDeniedHandler(JsonMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
-    @Override
-    public void handle(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AccessDeniedException exception) throws IOException, ServletException {
+  @Override
+  public void handle(
+      HttpServletRequest request, HttpServletResponse response, AccessDeniedException exception)
+      throws IOException, ServletException {
 
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ErroResponse error =
-                new ErroResponse(
-                        OffsetDateTime.now(ZoneOffset.UTC),
-                        HttpServletResponse.SC_FORBIDDEN,
-                        "FORBIDDEN",
-                        "Acesso negado.",
-                        request.getRequestURI());
+    ErroResponse error =
+        new ErroResponse(
+            OffsetDateTime.now(ZoneOffset.UTC),
+            HttpServletResponse.SC_FORBIDDEN,
+            "FORBIDDEN",
+            "Acesso negado.",
+            request.getRequestURI());
 
-        objectMapper.writeValue(response.getOutputStream(), error);
-    }
+    objectMapper.writeValue(response.getOutputStream(), error);
+  }
 }

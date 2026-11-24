@@ -37,6 +37,24 @@ class CotacaoAdapterDetailsTest {
   }
 
   @Test
+  void forwardsNonBlankBrapiToken() {
+    java.util.concurrent.atomic.AtomicReference<String> token =
+        new java.util.concurrent.atomic.AtomicReference<>();
+    BrapiClient client =
+        (ticker, authorization) -> {
+          token.set(authorization);
+          return new BrapiQuoteResponse(
+              List.of(
+                  new BrapiQuoteResponse.Result(
+                      new BigDecimal("10"), "Empresa", null, "2026-09-08T17:30:00Z")));
+        };
+
+    new BrapiCotacaoAdapter(client, "segredo").consultar("PETR4");
+
+    assertEquals("segredo", token.get());
+  }
+
+  @Test
   void mapsEmptyBrapiBodyToTickerNotFound() {
     BrapiClient client = (ticker, token) -> null;
 
@@ -62,6 +80,50 @@ class CotacaoAdapterDetailsTest {
 
     assertEquals("EXTERNAL_API_INVALID_RESPONSE", exception.getCode());
     assertEquals(502, exception.getStatus().value());
+  }
+
+  @Test
+  void rejectsEmptyOrIncompleteBrapiResults() {
+    for (BrapiQuoteResponse body :
+        List.of(
+            new BrapiQuoteResponse(null),
+            new BrapiQuoteResponse(List.of()),
+            new BrapiQuoteResponse(
+                List.of(
+                    new BrapiQuoteResponse.Result(
+                        null, "Empresa", null, "2026-09-08T17:30:00Z"))))) {
+      ApiException exception =
+          assertThrows(
+              ApiException.class,
+              () -> new BrapiCotacaoAdapter((ticker, token) -> body, "").consultar("PETR4"));
+      assertEquals("TICKER_NAO_ENCONTRADO", exception.getCode());
+    }
+  }
+
+  @Test
+  void rejectsNonPositivePriceMissingNameAndMalformedTimestamp() {
+    BrapiQuoteResponse.Result base =
+        new BrapiQuoteResponse.Result(new BigDecimal("10"), null, "Curto", "2026-09-08T17:30:00Z");
+    for (BrapiQuoteResponse.Result result :
+        List.of(
+            new BrapiQuoteResponse.Result(BigDecimal.ZERO, "Empresa", null, "2026-09-08T17:30:00Z"),
+            new BrapiQuoteResponse.Result(new BigDecimal("10"), "Empresa", null, " "),
+            new BrapiQuoteResponse.Result(new BigDecimal("10"), null, null, "2026-09-08T17:30:00Z"),
+            new BrapiQuoteResponse.Result(new BigDecimal("10"), null, "Curto", "invalido"))) {
+      ApiException exception =
+          assertThrows(
+              ApiException.class,
+              () ->
+                  new BrapiCotacaoAdapter(
+                          (ticker, token) -> new BrapiQuoteResponse(List.of(result)), "")
+                      .consultar("PETR4"));
+      assertEquals("EXTERNAL_API_INVALID_RESPONSE", exception.getCode());
+    }
+    assertEquals(
+        "Curto",
+        new BrapiCotacaoAdapter((ticker, token) -> new BrapiQuoteResponse(List.of(base)), "")
+            .consultar("PETR4")
+            .nomeEmpresa());
   }
 
   @Test
@@ -107,6 +169,46 @@ class CotacaoAdapterDetailsTest {
             () -> new TwelveDataCotacaoAdapter(client, "key").consultar("INVALID"));
 
     assertEquals("TICKER_NAO_ENCONTRADO", exception.getCode());
+  }
+
+  @Test
+  void rejectsEveryInvalidTwelveDataShape() {
+    for (TwelveDataQuoteResponse body :
+        java.util.Arrays.asList(
+            null,
+            new TwelveDataQuoteResponse(null, "1", 1L),
+            new TwelveDataQuoteResponse("IBM", "1", null),
+            new TwelveDataQuoteResponse("IBM", "1", 0L),
+            new TwelveDataQuoteResponse("IBM", "0", 1L),
+            new TwelveDataQuoteResponse("IBM", "invalido", 1L))) {
+      ApiException exception =
+          assertThrows(
+              ApiException.class,
+              () ->
+                  new TwelveDataCotacaoAdapter((ticker, authorization) -> body, "key")
+                      .consultar("IBM"));
+      assertEquals("EXTERNAL_API_INVALID_RESPONSE", exception.getCode());
+    }
+  }
+
+  @Test
+  void preservesNonNotFoundProviderErrors() {
+    ApiException providerError =
+        ApiException.external(
+            org.springframework.http.HttpStatus.TOO_MANY_REQUESTS,
+            "EXTERNAL_API_RATE_LIMIT",
+            "limite");
+    ApiException exception =
+        assertThrows(
+            ApiException.class,
+            () ->
+                new TwelveDataCotacaoAdapter(
+                        (ticker, authorization) -> {
+                          throw providerError;
+                        },
+                        "key")
+                    .consultar("IBM"));
+    assertEquals("EXTERNAL_API_RATE_LIMIT", exception.getCode());
   }
 
   @Test

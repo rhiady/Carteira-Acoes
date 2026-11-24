@@ -3,7 +3,6 @@ package com.carteiraacoesbackend.resources;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -29,10 +28,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureMockMvc
@@ -63,9 +62,11 @@ class CatalogoResourceIntegrationTest {
   void createsUserAndDoesNotExposePassword() throws Exception {
     mockMvc
         .perform(
-            post("/api/usuarios").with(user("admin").roles("ADMIN"))
+            post("/api/usuarios")
+                .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
-                .content("{\"login\":\"ana@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
+                .content(
+                    "{\"login\":\"ana@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.login").value("ana@teste.com"))
         .andExpect(jsonPath("$.papel").value("USER"))
@@ -77,7 +78,8 @@ class CatalogoResourceIntegrationTest {
   void rejectsMalformedJsonWithStandardErrorBody() throws Exception {
     mockMvc
         .perform(
-            post("/api/usuarios").with(user("admin").roles("ADMIN"))
+            post("/api/usuarios")
+                .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content("{\"login\":\"ana@teste.com\",\"password\":"))
         .andExpect(status().isBadRequest())
@@ -135,7 +137,8 @@ class CatalogoResourceIntegrationTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     mockMvc
-        .perform(get("/api/acoes").param("page", "0").param("size", "20").param("sort", "ticker,desc"))
+        .perform(
+            get("/api/acoes").param("page", "0").param("size", "20").param("sort", "ticker,desc"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content").isArray())
         .andExpect(jsonPath("$.number").value(0))
@@ -152,7 +155,8 @@ class CatalogoResourceIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/api/usuarios").with(user("admin").roles("ADMIN"))
+                post("/api/usuarios")
+                    .with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
                         "{\"login\":\"ana-update@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
@@ -182,7 +186,8 @@ class CatalogoResourceIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/api/usuarios").with(user("admin").roles("ADMIN"))
+                post("/api/usuarios")
+                    .with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
                         "{\"login\":\"bia-update@teste.com\",\"password\":\"senha-antiga\",\"papel\":\"USER\"}"))
@@ -234,7 +239,8 @@ class CatalogoResourceIntegrationTest {
   void rejectsDuplicateEmailOnUserUpdate() throws Exception {
     mockMvc
         .perform(
-            post("/api/usuarios").with(user("admin").roles("ADMIN"))
+            post("/api/usuarios")
+                .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content(
                     "{\"login\":\"um-update@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
@@ -242,7 +248,8 @@ class CatalogoResourceIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/api/usuarios").with(user("admin").roles("ADMIN"))
+                post("/api/usuarios")
+                    .with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
                         "{\"login\":\"dois-update@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
@@ -278,10 +285,18 @@ class CatalogoResourceIntegrationTest {
   void rejectsDuplicateEmailAndReturnsStandardError() throws Exception {
     String body = "{\"login\":\"bruno@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}";
     mockMvc
-        .perform(post("/api/usuarios").with(user("admin").roles("ADMIN")).contentType("application/json").content(body))
+        .perform(
+            post("/api/usuarios")
+                .with(user("admin").roles("ADMIN"))
+                .contentType("application/json")
+                .content(body))
         .andExpect(status().isCreated());
     mockMvc
-        .perform(post("/api/usuarios").with(user("admin").roles("ADMIN")).contentType("application/json").content(body))
+        .perform(
+            post("/api/usuarios")
+                .with(user("admin").roles("ADMIN"))
+                .contentType("application/json")
+                .content(body))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.error").value("EMAIL_DUPLICADO"));
   }
@@ -291,7 +306,8 @@ class CatalogoResourceIntegrationTest {
     String userResponse =
         mockMvc
             .perform(
-                post("/api/usuarios").with(user("admin").roles("ADMIN"))
+                post("/api/usuarios")
+                    .with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
                         "{\"login\":\"carla@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))
@@ -329,7 +345,8 @@ class CatalogoResourceIntegrationTest {
     String userResponse =
         mockMvc
             .perform(
-                post("/api/usuarios").with(user("admin").roles("ADMIN"))
+                post("/api/usuarios")
+                    .with(user("admin").roles("ADMIN"))
                     .contentType("application/json")
                     .content(
                         "{\"login\":\"davi@teste.com\",\"password\":\"segredo123\",\"papel\":\"USER\"}"))

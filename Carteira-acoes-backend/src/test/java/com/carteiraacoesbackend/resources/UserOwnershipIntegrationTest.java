@@ -140,9 +140,7 @@ class UserOwnershipIntegrationTest {
 
     mockMvc.perform(get("/api/usuarios")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/usuarios/{id}", ana.getId())).andExpect(status().isUnauthorized());
-    mockMvc
-        .perform(get("/api/usuarios").with(session))
-        .andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/usuarios").with(session)).andExpect(status().isForbidden());
     mockMvc
         .perform(get("/api/usuarios/{id}", joao.getId()).with(session))
         .andExpect(status().isForbidden());
@@ -152,8 +150,7 @@ class UserOwnershipIntegrationTest {
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
-                .content(
-                    "{\"login\":\"invadido@test.com\",\"ativo\":true}"))
+                .content("{\"login\":\"invadido@test.com\",\"ativo\":true}"))
         .andExpect(status().isForbidden());
 
     assertThat(usuarios.findById(joao.getId()).orElseThrow().getEmail())
@@ -221,7 +218,10 @@ class UserOwnershipIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"login\":\"" + email + "\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                    .content(
+                        "{\"login\":\""
+                            + email
+                            + "\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

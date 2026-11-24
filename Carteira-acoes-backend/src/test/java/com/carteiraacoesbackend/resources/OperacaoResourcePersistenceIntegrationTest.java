@@ -1,6 +1,8 @@
 package com.carteiraacoesbackend.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -40,8 +42,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureMockMvc
@@ -97,8 +97,7 @@ class OperacaoResourcePersistenceIntegrationTest {
     acao.setCotacaoAtual(new BigDecimal("10.00"));
     acao.setDataHoraCotacao(OffsetDateTime.now(ZoneOffset.UTC));
     acoes.save(acao);
-    session =
-        login(usuario.getEmail());
+    session = login(usuario.getEmail());
     mockMvc =
         MockMvcBuilders.webAppContextSetup(context)
             .apply(springSecurity())
@@ -112,7 +111,8 @@ class OperacaoResourcePersistenceIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"login\":\"" + email + "\",\"password\":\"senha\",\"papel\":\"USER\"}"))
+                    .content(
+                        "{\"login\":\"" + email + "\",\"password\":\"senha\",\"papel\":\"USER\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -149,7 +149,8 @@ class OperacaoResourcePersistenceIntegrationTest {
                         .formatted(carteira.getId(), acao.getId())))
         .andExpect(status().isCreated())
         .andExpect(
-            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/api/operacoes/\\d+")))
+            header()
+                .string("Location", org.hamcrest.Matchers.matchesPattern(".*/api/operacoes/\\d+")))
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.ticker").value("TEST3"))
         .andExpect(jsonPath("$.nomeEmpresa").value("Empresa de teste"))
@@ -176,7 +177,8 @@ class OperacaoResourcePersistenceIntegrationTest {
                         .formatted(carteira.getId(), acao.getId())))
         .andExpect(status().isCreated())
         .andExpect(
-            header().string("Location", org.hamcrest.Matchers.matchesPattern(".*/api/operacoes/\\d+")))
+            header()
+                .string("Location", org.hamcrest.Matchers.matchesPattern(".*/api/operacoes/\\d+")))
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.ticker").value("TEST3"))
         .andExpect(jsonPath("$.nomeEmpresa").value("Empresa de teste"))
@@ -323,8 +325,10 @@ class OperacaoResourcePersistenceIntegrationTest {
     admin.setPapel(Papel.ADMIN);
     usuarios.save(admin);
     when(cotacaoAdapter.consultar(any(), any()))
-        .thenReturn(new Cotacao(new BigDecimal("22.00"), OffsetDateTime.now(ZoneOffset.UTC), "Vale S.A."));
-    MockMvc adminClient = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        .thenReturn(
+            new Cotacao(new BigDecimal("22.00"), OffsetDateTime.now(ZoneOffset.UTC), "Vale S.A."));
+    MockMvc adminClient =
+        MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     String adminResponse =
         adminClient
             .perform(
@@ -379,7 +383,9 @@ class OperacaoResourcePersistenceIntegrationTest {
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
-                .content("{\"carteiraId\":%d,\"quantidade\":1,\"precoUnitario\":22}".formatted(carteira.getId())))
+                .content(
+                    "{\"carteiraId\":%d,\"quantidade\":1,\"precoUnitario\":22}"
+                        .formatted(carteira.getId())))
         .andExpect(status().isBadRequest());
     mockMvc
         .perform(

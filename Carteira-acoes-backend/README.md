@@ -18,7 +18,7 @@ Domínios principais:
 - **Corretora:** o CNPJ identifica a instituição; razão social e endereço vêm da consulta cadastral e o registro é validado na CVM.
 - **Operação e posição:** compras e vendas atualizam o histórico e as posições da carteira.
 
-> A API ainda não possui autenticação/autorização. Não a exponha publicamente sem adicionar esse controle.
+> A API usa JWT para autenticação e restringe operações conforme o papel do usuário. Mantenha os segredos e as origens CORS configurados fora do repositório.
 
 ## Pré-requisitos
 
@@ -81,10 +81,31 @@ O perfil `dev` usa PostgreSQL e aplica as migrations do Flyway. O perfil `test` 
 # Executa a suíte automatizada com o perfil de testes
 ./mvnw test
 
+# Executa testes, gera o relatório JaCoCo e aplica o portão de cobertura
+./mvnw clean verify
+
 # Sobe a API localmente (porta 8080)
 set -a && source .env && set +a
 ./mvnw spring-boot:run
 ```
+
+### Política de testes e cobertura
+
+O comando canônico para validar o projeto é `./mvnw clean verify`. Ele executa a suíte com JaCoCo, gera os relatórios em `target/site/jacoco/` (`index.html`, `jacoco.xml` e `jacoco.csv`) e aplica os mínimos agregados de 85% de linhas e 85% de ramos. `./mvnw test` executa os testes, mas não substitui a fase `verify` nem confirma o portão.
+
+O relatório HTML mostra linhas verdes cobertas, vermelhas não cobertas e amarelas quando apenas parte de uma decisão foi exercitada. Cobertura é um diagnóstico, não prova de qualidade: priorize comportamentos observáveis, caminhos de sucesso e erro, autorização, validação, cálculos financeiros e valores de fronteira. Não reduza limites, remova testes, crie exclusões arbitrárias ou adicione testes sem asserções para fazer o build passar.
+
+Os testes unitários usam Mockito para colaboradores externos ao serviço e objetos reais de requisição/resposta; os testes de resource usam MVC, segurança, H2 e Flyway reais. O ciclo recomendado é Red → Green → Refactor: escreva um cenário que falha, implemente o mínimo, rode a suíte e refatore sem alterar o comportamento.
+
+Para avaliar uma meta mais alta sem alterar a configuração versionada:
+
+```bash
+./mvnw verify -Djacoco.minimum.line.coverage=0.90 -Djacoco.minimum.branch.coverage=0.90
+```
+
+A política atual exige pelo menos 85% de linhas e 85% de ramos, sempre acompanhada por testes que expliquem os comportamentos protegidos. A medição atual encontrou 166 testes, 94,38% de linhas e 85,10% de ramos; a suíte deve ser medida novamente após mudanças relevantes.
+
+A auditoria de referência mencionava 79 testes, Liquibase e um `LocalUserDetailsServiceTest` em outro pacote. Esses itens não correspondem ao estado atual deste repositório: a suíte usa Flyway e o teste externo não foi localizado. O arquivo não foi apagado automaticamente; qualquer limpeza deve ser uma atividade separada.
 
 Com a aplicação em execução:
 

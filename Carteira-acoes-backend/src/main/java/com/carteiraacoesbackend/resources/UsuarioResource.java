@@ -1,8 +1,8 @@
 package com.carteiraacoesbackend.resources;
 
-import com.carteiraacoesbackend.dto.ErroResponse;
-import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
 import com.carteiraacoesbackend.dto.AlterarPapelRequest;
+import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
+import com.carteiraacoesbackend.dto.ErroResponse;
 import com.carteiraacoesbackend.dto.UsuarioCreateRequest;
 import com.carteiraacoesbackend.dto.UsuarioResponse;
 import com.carteiraacoesbackend.dto.UsuarioUpdateRequest;

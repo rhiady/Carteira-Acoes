@@ -77,7 +77,9 @@ class CorretoraResourceIntegrationTest {
   void rejectsMalformedCnpjBeforeCallingTheDomain() throws Exception {
     mockMvc
         .perform(
-            post("/api/corretoras").contentType("application/json").content("{\"cnpj\":\"123ABC\"}"))
+            post("/api/corretoras")
+                .contentType("application/json")
+                .content("{\"cnpj\":\"123ABC\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     mockMvc

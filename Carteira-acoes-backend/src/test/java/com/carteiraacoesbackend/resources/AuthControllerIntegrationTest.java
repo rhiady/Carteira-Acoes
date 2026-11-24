@@ -1,31 +1,31 @@
 package com.carteiraacoesbackend.resources;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.carteiraacoesbackend.repositories.UsuarioRepository;
 import com.carteiraacoesbackend.domains.Usuario;
 import com.carteiraacoesbackend.domains.enums.Papel;
+import com.carteiraacoesbackend.repositories.UsuarioRepository;
 import java.time.Instant;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 @SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureMockMvc
@@ -75,7 +75,8 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/cadastro")
                 .contentType("application/json")
-                .content("{\"nome\":\"Ana Silva\",\"email\":\"ana@email.com\",\"senha\":\"senha123\"}"))
+                .content(
+                    "{\"nome\":\"Ana Silva\",\"email\":\"ana@email.com\",\"senha\":\"senha123\"}"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.login").value("ana@email.com"))
         .andExpect(jsonPath("$.papel").value("USER"));
@@ -231,7 +232,9 @@ class AuthControllerIntegrationTest {
     mockMvc
         .perform(
             get("/api/auth/me")
-                .header("Authorization", "Bearer " + token("carteiracoes-test", Instant.now().minusSeconds(120))))
+                .header(
+                    "Authorization",
+                    "Bearer " + token("carteiracoes-test", Instant.now().minusSeconds(120))))
         .andExpect(status().isUnauthorized());
   }
 
@@ -240,7 +243,9 @@ class AuthControllerIntegrationTest {
     mockMvc
         .perform(
             get("/api/auth/me")
-                .header("Authorization", "Bearer " + token("outro-issuer", Instant.now().plusSeconds(60))))
+                .header(
+                    "Authorization",
+                    "Bearer " + token("outro-issuer", Instant.now().plusSeconds(60))))
         .andExpect(status().isUnauthorized());
   }
 
@@ -287,9 +292,11 @@ class AuthControllerIntegrationTest {
   private void criarUsuario() throws Exception {
     mockMvc
         .perform(
-            post("/api/usuarios").with(user("admin").roles("ADMIN"))
+            post("/api/usuarios")
+                .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
-                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                .content(
+                    "{\"login\":\"ana@email.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
         .andExpect(status().isCreated());
   }
 }

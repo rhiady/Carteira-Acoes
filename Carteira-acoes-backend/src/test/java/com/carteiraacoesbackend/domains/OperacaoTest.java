@@ -40,4 +40,38 @@ class OperacaoTest {
     assertThat(operacao.getValorBruto()).isEqualByComparingTo("200");
     assertThat(operacao.getValorLiquido()).isEqualByComparingTo("235");
   }
+
+  @Test
+  void calculatesSaleNetValueAndLeavesDerivedValuesUnsetWithoutInputs() {
+    Operacao venda = new Operacao();
+    venda.setTipo(TipoOperacao.VENDA);
+    venda.setQuantidade(new BigDecimal("2"));
+    venda.setPrecoUnitario(new BigDecimal("100"));
+    venda.setCorretagem(new BigDecimal("5"));
+    venda.setImpostos(new BigDecimal("10"));
+    venda.setValorAdicional(new BigDecimal("20"));
+
+    venda.recalcularValores();
+
+    assertThat(venda.getValorBruto()).isEqualByComparingTo("200");
+    assertThat(venda.getValorLiquido()).isEqualByComparingTo("165");
+
+    Operacao incompleta = new Operacao();
+    incompleta.setTipo(TipoOperacao.COMPRA);
+    incompleta.recalcularValores();
+    assertThat(incompleta.getValorBruto()).isNull();
+    assertThat(incompleta.getValorLiquido()).isNull();
+
+    Operacao withData = new Operacao();
+    withData.setDataHora(java.time.OffsetDateTime.now());
+    withData.setQuantidade(new BigDecimal("1"));
+    withData.setPrecoUnitario(BigDecimal.TEN);
+    withData.onCreate();
+    assertThat(withData.getDataHora()).isNotNull();
+
+    Operacao missingPrice = new Operacao();
+    missingPrice.setQuantidade(BigDecimal.ONE);
+    missingPrice.recalcularValores();
+    assertThat(missingPrice.getValorBruto()).isNull();
+  }
 }

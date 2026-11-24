@@ -1,8 +1,8 @@
 package com.carteiraacoesbackend.services;
 
 import com.carteiraacoesbackend.config.JwtProperties;
-import com.carteiraacoesbackend.dto.LoginRequest;
 import com.carteiraacoesbackend.dto.AlterarSenhaRequest;
+import com.carteiraacoesbackend.dto.LoginRequest;
 import com.carteiraacoesbackend.dto.TokenResponse;
 import com.carteiraacoesbackend.exceptions.ApiException;
 import com.carteiraacoesbackend.repositories.UsuarioRepository;
@@ -12,12 +12,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.security.oauth2.jwt.JwsHeader;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

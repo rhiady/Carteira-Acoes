@@ -46,7 +46,8 @@ public class CvmDataFacade {
       String linha;
       while ((linha = reader.readLine()) != null) {
         String[] campos = linha.split(";", -1);
-        if (campos.length > Math.max(tipoIndex, Math.max(cnpjIndex, Math.max(codigoIndex, statusIndex)))
+        if (campos.length
+                > Math.max(tipoIndex, Math.max(cnpjIndex, Math.max(codigoIndex, statusIndex)))
             && "CORRETORAS".equals(campos[tipoIndex])
             && limpar(campos[cnpjIndex]).equals(cnpj)) {
           return new BrasilApiCvmBrokerResponse(

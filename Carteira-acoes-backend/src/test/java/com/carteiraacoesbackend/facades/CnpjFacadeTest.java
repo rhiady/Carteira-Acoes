@@ -2,6 +2,8 @@ package com.carteiraacoesbackend.facades;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.carteiraacoesbackend.clients.BrasilApiClient;
 import com.carteiraacoesbackend.clients.CnpjWsClient;
@@ -90,6 +92,84 @@ class CnpjFacadeTest {
 
     assertEquals("EXTERNAL_API_UNAVAILABLE", error.getCode());
     assertEquals(503, error.getStatus().value());
+  }
+
+  @Test
+  void rejectsInvalidCnpjBeforeCallingExternalApi() {
+    ApiException error =
+        assertThrows(
+            ApiException.class, () -> new CnpjFacade(new FakeBrasilApiClient()).consultar("123"));
+
+    assertEquals("CNPJ_INVALIDO", error.getCode());
+    assertEquals(422, error.getStatus().value());
+  }
+
+  @Test
+  void usesFallbackForExternalApiErrorAndMapsNullableAddressParts() {
+    CnpjWsClient fallback = mock(CnpjWsClient.class);
+    when(fallback.consultarCnpj("12345678000190"))
+        .thenReturn(
+            new CnpjWsResponse(
+                "Razão",
+                new CnpjWsResponse.Estabelecimento(
+                    "Fantasia", null, null, "ATIVA", null, null, null, null, null, null, null)));
+    BrasilApiClient primary = mock(BrasilApiClient.class);
+    when(primary.consultarCnpj("12345678000190"))
+        .thenThrow(
+            ApiException.external(
+                org.springframework.http.HttpStatus.BAD_GATEWAY, "EXTERNAL_API_ERROR", "falha"));
+
+    BrasilApiCnpjResponse response =
+        new CnpjFacade(primary, fallback, new ExternalCallLogger()).consultar("12345678000190");
+
+    assertEquals("Razão", response.razaoSocial());
+    assertEquals("Fantasia", response.nomeFantasia());
+    assertEquals(null, response.cidade());
+    assertEquals(null, response.uf());
+  }
+
+  @Test
+  void doesNotUseFallbackForNonExternalApiErrors() {
+    BrasilApiClient primary = mock(BrasilApiClient.class);
+    when(primary.consultarCnpj("12345678000190"))
+        .thenThrow(
+            ApiException.external(
+                org.springframework.http.HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "falha"));
+    CnpjWsClient fallback = mock(CnpjWsClient.class);
+
+    ApiException error =
+        assertThrows(
+            ApiException.class,
+            () ->
+                new CnpjFacade(primary, fallback, new ExternalCallLogger())
+                    .consultar("12345678000190"));
+
+    assertEquals("VALIDATION_ERROR", error.getCode());
+  }
+
+  @Test
+  void convertsFallbackFailureOrEmptyFallbackToUnavailable() {
+    BrasilApiClient primary = mock(BrasilApiClient.class);
+    when(primary.consultarCnpj("12345678000190")).thenReturn(null);
+    CnpjWsClient fallback = mock(CnpjWsClient.class);
+    when(fallback.consultarCnpj("12345678000190")).thenReturn(null);
+
+    ApiException empty =
+        assertThrows(
+            ApiException.class,
+            () ->
+                new CnpjFacade(primary, fallback, new ExternalCallLogger())
+                    .consultar("12345678000190"));
+    assertEquals("EXTERNAL_API_UNAVAILABLE", empty.getCode());
+
+    when(fallback.consultarCnpj("12345678000190")).thenThrow(new RuntimeException("timeout"));
+    ApiException failure =
+        assertThrows(
+            ApiException.class,
+            () ->
+                new CnpjFacade(primary, fallback, new ExternalCallLogger())
+                    .consultar("12345678000190"));
+    assertEquals("EXTERNAL_API_UNAVAILABLE", failure.getCode());
   }
 
   private static class FakeBrasilApiClient implements BrasilApiClient {

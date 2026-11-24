@@ -344,6 +344,77 @@ class AcaoServiceCotacaoTest {
     assertEquals("PERIODO_INVALIDO", periodError.getCode());
   }
 
+  @Test
+  void rejectsMissingTickerOrMarketAndInvalidProviderData() {
+    ApiException missingTicker =
+        assertThrows(
+            ApiException.class, () -> service.criar(new AcaoRequest(null, Mercado.BRASIL)));
+    assertEquals("IDENTIFICACAO_ACAO_INVALIDA", missingTicker.getCode());
+
+    ApiException missingMarket =
+        assertThrows(ApiException.class, () -> service.criar(new AcaoRequest("PETR4", null)));
+    assertEquals("IDENTIFICACAO_ACAO_INVALIDA", missingMarket.getCode());
+
+    ApiException blankTicker =
+        assertThrows(ApiException.class, () -> service.criar(new AcaoRequest(" ", Mercado.BRASIL)));
+    assertEquals("IDENTIFICACAO_ACAO_INVALIDA", blankTicker.getCode());
+
+    cotacaoAdapter.cotacao = new Cotacao(BigDecimal.ONE, OffsetDateTime.now(ZoneOffset.UTC), " ");
+    ApiException missingName =
+        assertThrows(
+            ApiException.class, () -> service.criar(new AcaoRequest("PETR4", Mercado.BRASIL)));
+    assertEquals("EXTERNAL_API_INVALID_RESPONSE", missingName.getCode());
+  }
+
+  @Test
+  void supportsEachHistoryFilterAndRejectsUnknownTicker() {
+    OffsetDateTime first = OffsetDateTime.parse("2026-09-01T10:00:00Z");
+    OffsetDateTime second = OffsetDateTime.parse("2026-09-02T10:00:00Z");
+    cotacaoAdapter.cotacao = new Cotacao(BigDecimal.TEN, first, "Empresa");
+    AcaoResponse acao = criarAcao("FILT3");
+    cotacaoAdapter.cotacao = new Cotacao(new BigDecimal("11"), second, "Empresa");
+    service.atualizarCotacao(acao.id());
+
+    assertEquals(
+        2,
+        service
+            .historico(acao.id(), first, null, org.springframework.data.domain.Pageable.unpaged())
+            .getTotalElements());
+    assertEquals(
+        2,
+        service
+            .historico(acao.id(), null, second, org.springframework.data.domain.Pageable.unpaged())
+            .getTotalElements());
+    assertEquals(
+        2,
+        service
+            .historico(acao.id(), null, null, org.springframework.data.domain.Pageable.unpaged())
+            .getTotalElements());
+
+    ApiException unknown = assertThrows(ApiException.class, () -> service.buscarPorTicker("NOPE3"));
+    assertEquals("ACAO_NAO_ENCONTRADA", unknown.getCode());
+  }
+
+  @Test
+  void updatesQuoteWhenNoPreviousTimestampExists() {
+    com.carteiraacoesbackend.domains.Acao acao = new com.carteiraacoesbackend.domains.Acao();
+    acao.setTicker("UNTIM3");
+    acao.setNomeEmpresa("Empresa");
+    acao.setMercado(Mercado.BRASIL);
+    acao.setMoeda(com.carteiraacoesbackend.domains.enums.Moeda.BRL);
+    repository.save(acao);
+    cotacaoAdapter.cotacao = cotacao("12.00", "Empresa");
+
+    AcaoResponse updated = service.atualizarCotacao(acao.getId());
+
+    assertEquals(new BigDecimal("12.00"), updated.cotacaoAtual());
+    assertEquals(
+        1,
+        historicos
+            .findByAcaoId(acao.getId(), org.springframework.data.domain.Pageable.unpaged())
+            .getTotalElements());
+  }
+
   private void verificarFalha(
       String ticker, ApiException failure, int expectedStatus, String expectedCode) {
     cotacaoAdapter.cotacao = cotacao("10.0000", "Empresa importada");

@@ -16,9 +16,10 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -26,7 +27,6 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -64,9 +64,10 @@ public class SecurityConfig {
     converter.setJwtGrantedAuthoritiesConverter(
         jwt -> {
           List<String> authorities = jwt.getClaimAsStringList("authorities");
-          return (authorities == null ? List.<String>of() : authorities).stream()
-                .map(authority -> (GrantedAuthority) new SimpleGrantedAuthority(authority))
-                .toList();
+          return (authorities == null ? List.<String>of() : authorities)
+              .stream()
+                  .map(authority -> (GrantedAuthority) new SimpleGrantedAuthority(authority))
+                  .toList();
         });
     return converter;
   }
@@ -80,7 +81,8 @@ public class SecurityConfig {
       throws Exception {
     http.csrf(csrf -> csrf.disable())
         .cors(cors -> {})
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .sessionManagement(
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             authorize ->
                 authorize
@@ -95,7 +97,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/acoes", "/api/acoes/atualizar-cotacoes")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/acoes/*/cotacao")
-                        .hasRole("ADMIN")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/api/acoes/**")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/corretoras")
