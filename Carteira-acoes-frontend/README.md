@@ -1,59 +1,83 @@
-# CarteiraAcoesFrontend
+# Carteira de Ações — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.3.
+Interface web Angular para investidores acompanharem carteiras, posições, cotações e operações. O frontend consome exclusivamente a API do backend para dados financeiros e usa Angular Material para a interface.
 
-## Development server
+## Stack
 
-To start a local development server, run:
+- Angular 22 com componentes standalone e roteamento lazy;
+- TypeScript 6 e RxJS;
+- Angular Material/CDK;
+- ApexCharts para gráficos;
+- Vitest para testes unitários;
+- Nginx para servir o build em Docker.
 
-```bash
-ng serve
+## Organização do código
+
+```text
+src/app/
+├── core/
+│   ├── config/         configuração da API
+│   ├── guards/         proteção por autenticação e papel
+│   ├── interceptors/   JWT e tratamento de erros
+│   ├── mappers/        normalização de respostas
+│   ├── models/         contratos de domínio
+│   ├── services/       acesso à API e estado de sessão
+│   └── formatters/     formatação monetária e variação
+├── features/           páginas por domínio
+└── shared/components/  componentes reutilizáveis
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Principais áreas: login e cadastro, início/dashboard, ações, carteiras, operações, corretoras e administração de usuários. Rotas administrativas exigem `ROLE_ADMIN`; as demais superfícies financeiras exigem autenticação.
 
-## Code scaffolding
+## Pré-requisitos e instalação
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Node.js 22 e npm são recomendados.
 
 ```bash
-ng generate --help
+npm ci
 ```
 
-## Building
-
-To build the project run:
+## Desenvolvimento
 
 ```bash
-ng build
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Acesse `http://localhost:4200`. A configuração local usa `apiBaseUrl: '/api'`, portanto as requisições devem ser encaminhadas para a API em `http://localhost:8080` pelo proxy do ambiente ou por um servidor reverso. O backend precisa estar em execução e aceitar a origem do frontend em `CORS_ALLOWED_ORIGINS` quando o navegador acessar a API diretamente.
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Build e testes
 
 ```bash
-ng test
+npm run build
+npm run watch
+npm test
 ```
 
-## Running end-to-end tests
+O build de produção gera os arquivos em `dist/Carteira-acoes-frontend/browser/`.
 
-For end-to-end (e2e) testing, run:
+## Configuração da API
+
+- Desenvolvimento: [`src/environments/environment.ts`](src/environments/environment.ts) usa `/api`.
+- Produção: [`src/environments/environment.production.ts`](src/environments/environment.production.ts) também usa `api` relativo, atendido pelo proxy `/api/` do Nginx no Docker Compose.
+
+O token JWT é mantido em `sessionStorage`. O interceptor adiciona `Authorization: Bearer ...` às chamadas autenticadas; ao expirar ou falhar a sessão, o usuário volta para o login.
+
+## Docker
+
+O `Dockerfile` executa `npm ci`, cria o build Angular e publica os arquivos com Nginx. Para subir a aplicação completa:
 
 ```bash
-ng e2e
+cd ../deploy
+docker compose up --build -d
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Acesse `http://localhost`. O Nginx serve a SPA e encaminha `/api/` para o backend.
 
-## Additional Resources
+## Regras de domínio importantes
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- O backend é a fonte de verdade de posições, valores, cotações e conversões.
+- O frontend não recalcula resultados financeiros nem mistura BRL e USD.
+- Dados ausentes de conversão ou cotação devem continuar explícitos na interface.
+- Componentes e páginas devem preservar navegação por teclado, contraste e estados acessíveis.
+
+Para o fluxo completo, incluindo Postman e configuração do banco, consulte o [README geral](../README.md) e o [README do backend](../Carteira-acoes-backend/README.md).
