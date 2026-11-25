@@ -15,7 +15,7 @@ class UsuarioMapperTest {
     UsuarioResponse response =
         mapper.toResponse(
             mapper.toEntity(
-                new UsuarioCreateRequest("ana@teste.com", "segredo123", Papel.USER), "hash"));
+                new UsuarioCreateRequest("ana@teste.com", "Segredo123", Papel.USER), "hash"));
 
     assertThat(response.login()).isEqualTo("ana@teste.com");
     assertThat(response.papel()).isEqualTo(Papel.USER);

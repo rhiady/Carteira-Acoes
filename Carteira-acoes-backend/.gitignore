@@ -1,6 +1,9 @@
 HELP.md
 target/
 .env
+# Arquivos locais de ambiente; o exemplo versionado continua permitido.
+.env.*
+!.env.example
 *.log
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

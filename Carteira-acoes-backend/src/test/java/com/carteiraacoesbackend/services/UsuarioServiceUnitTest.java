@@ -40,17 +40,17 @@ class UsuarioServiceUnitTest {
     Usuario usuario = usuario(1L, "ana@example.com");
     UsuarioResponse response = new UsuarioResponse(1L, "ana@example.com", Papel.USER, true);
     when(repository.existsByEmail("ana@example.com")).thenReturn(false);
-    when(passwordEncoder.encode("senha-segura")).thenReturn("hash-bcrypt");
+    when(passwordEncoder.encode("Senha-segura")).thenReturn("hash-bcrypt");
     when(mapper.toEntity(any(), eq("hash-bcrypt"))).thenReturn(usuario);
     when(repository.save(usuario)).thenReturn(usuario);
     when(mapper.toResponse(usuario)).thenReturn(response);
 
     UsuarioResponse actual =
-        service.criar(new UsuarioCreateRequest(" ANA@EXAMPLE.COM ", "senha-segura", Papel.USER));
+        service.criar(new UsuarioCreateRequest(" ANA@EXAMPLE.COM ", "Senha-segura", Papel.USER));
 
     assertThat(actual).isEqualTo(response);
     verify(repository).existsByEmail("ana@example.com");
-    verify(passwordEncoder).encode("senha-segura");
+    verify(passwordEncoder).encode("Senha-segura");
     verify(repository).save(usuario);
   }
 
@@ -61,7 +61,7 @@ class UsuarioServiceUnitTest {
     assertThatThrownBy(
             () ->
                 service.criar(
-                    new UsuarioCreateRequest("ana@example.com", "senha-segura", Papel.USER)))
+                    new UsuarioCreateRequest("ana@example.com", "Senha-segura", Papel.USER)))
         .isInstanceOf(ApiException.class)
         .extracting(exception -> ((ApiException) exception).getCode())
         .isEqualTo("EMAIL_DUPLICADO");
@@ -118,16 +118,16 @@ class UsuarioServiceUnitTest {
     Usuario usuario = usuario(1L, "ana@example.com");
     UsuarioResponse response = new UsuarioResponse(1L, "ana@example.com", Papel.USER, true);
     when(repository.findById(1L)).thenReturn(Optional.of(usuario));
-    when(passwordEncoder.encode("nova-senha")).thenReturn("novo-hash");
+    when(passwordEncoder.encode("Nova-senha")).thenReturn("novo-hash");
     when(repository.save(usuario)).thenReturn(usuario);
     when(mapper.toResponse(usuario)).thenReturn(response);
 
-    service.alterarSenha(1L, new AlterarSenhaRequest("nova-senha"));
+    service.alterarSenha(1L, new AlterarSenhaRequest("Nova-senha"));
 
     ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
     verify(repository).save(captor.capture());
     assertThat(captor.getValue().getSenha()).isEqualTo("novo-hash");
-    assertThat(captor.getValue().getSenha()).isNotEqualTo("nova-senha");
+    assertThat(captor.getValue().getSenha()).isNotEqualTo("Nova-senha");
   }
 
   private Usuario usuario(Long id, String email) {

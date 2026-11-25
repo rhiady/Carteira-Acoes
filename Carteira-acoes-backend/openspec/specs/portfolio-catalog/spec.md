@@ -89,6 +89,21 @@ O sistema SHALL consultar ações por identificador ou ticker e SHALL listar aç
 - **WHEN** um administrador informa ticker inexistente ou o provedor não retorna nome ou cotação válidos para o mercado
 - **THEN** o sistema rejeita a solicitação sem persistir ação, posição ou operação
 
+### Requirement: Política de complexidade para senhas de usuário
+O sistema MUST aceitar uma nova senha em cadastro ou atualização cadastral somente quando ela tiver no mínimo 8 caracteres, pelo menos uma letra maiúscula e pelo menos uma letra minúscula.
+
+#### Scenario: Cadastro com senha válida
+- **WHEN** um cliente cadastra um usuário com senha de pelo menos 8 caracteres contendo letras maiúsculas e minúsculas
+- **THEN** o sistema cria o usuário e armazena a senha de forma codificada
+
+#### Scenario: Cadastro com senha fora da política
+- **WHEN** um cliente cadastra um usuário com senha menor que 8 caracteres, sem letra maiúscula ou sem letra minúscula
+- **THEN** o sistema responde HTTP 400 com erro de validação e não cria o usuário
+
+#### Scenario: Atualização com nova senha fora da política
+- **WHEN** um cliente informa uma nova senha que não atende ao tamanho mínimo ou à exigência de maiúsculas e minúsculas
+- **THEN** o sistema responde HTTP 400 com erro de validação e preserva a senha anterior
+
 ### Requirement: Posições ativas da carteira
 O sistema SHALL listar as ações de uma carteira apenas quando a quantidade da posição for maior que zero. `GET /carteiras/{id}/acoes` SHALL retornar uma página de posições enriquecidas, com paginação padrão `page=0`, `size=20` e `sort=id,desc`. O endpoint SHALL aceitar ordenação pública somente por `ticker`, `quantidade` e `id`, em direção ascendente ou descendente, sem exigir que clientes conheçam nomes internos de persistência. Campos de ordenação não permitidos MUST ser rejeitados com erro 400 padronizado. Cada posição SHALL conter `carteiraId`, `acaoId`, ticker, nome da empresa, mercado, moeda, quantidade, cotação atual, data/hora da cotação, valor atual, preço médio de venda quando aplicável, lucro/prejuízo realizado, não realizado e total, todos calculados pelas operações históricas com precisão decimal. Quando nenhuma venda tiver sido registrada para a posição, `precoMedioVenda` SHALL ser `null`, não zero. Para posições de ações do mercado EUA cuja taxa USD/BRL esteja disponível, a resposta SHALL incluir `cotacaoEmBrl`, `valorAtualEmBrl`, `taxaUsdBrl` e `dataHoraTaxaUsdBrl`, preservando todos os valores financeiros originais em USD. Quantidades e valores monetários MUST ser representados com precisão decimal; campos monetários originais de cada posição SHALL estar na moeda da própria ação.
 

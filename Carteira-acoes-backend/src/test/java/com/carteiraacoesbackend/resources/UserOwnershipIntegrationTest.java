@@ -191,7 +191,7 @@ class UserOwnershipIntegrationTest {
     Usuario usuario = new Usuario();
     usuario.setNome(email);
     usuario.setEmail(email);
-    usuario.setSenha(passwords.encode("senha123"));
+    usuario.setSenha(passwords.encode("Senha123"));
     usuario.setPapel(Papel.USER);
     return usuarios.save(usuario);
   }
@@ -221,7 +221,7 @@ class UserOwnershipIntegrationTest {
                     .content(
                         "{\"login\":\""
                             + email
-                            + "\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                            + "\",\"password\":\"Senha123\",\"papel\":\"USER\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

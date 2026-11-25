@@ -62,7 +62,7 @@ class SecurityIntegrationTest {
             post("/api/auth/login")
                 .contentType("application/json")
                 .content(
-                    "{\"login\":\"user@test.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                    "{\"login\":\"user@test.com\",\"password\":\"Senha123\",\"papel\":\"USER\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.senha").doesNotExist())
         .andExpect(jsonPath("$.papel").doesNotExist());
@@ -114,7 +114,7 @@ class SecurityIntegrationTest {
                 .with(csrf())
                 .contentType("application/json")
                 .content(
-                    "{\"login\":\"blocked-create@test.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                    "{\"login\":\"blocked-create@test.com\",\"password\":\"Senha123\",\"papel\":\"USER\"}"))
         .andExpect(status().isForbidden());
 
     mockMvc
@@ -132,7 +132,7 @@ class SecurityIntegrationTest {
                 .with(session)
                 .with(csrf())
                 .contentType("application/json")
-                .content("{\"password\":\"nova-senha\"}"))
+                .content("{\"password\":\"Nova-senha\"}"))
         .andExpect(status().isForbidden());
 
     mockMvc
@@ -278,7 +278,7 @@ class SecurityIntegrationTest {
                 .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content(
-                    "{\"login\":\"ana@test.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                    "{\"login\":\"ana@test.com\",\"password\":\"Senha123\",\"papel\":\"USER\"}"))
         .andExpect(status().isCreated());
 
     mockMvc
@@ -317,7 +317,7 @@ class SecurityIntegrationTest {
     Usuario usuario = new Usuario();
     usuario.setNome(email);
     usuario.setEmail(email);
-    usuario.setSenha(passwords.encode("senha123"));
+    usuario.setSenha(passwords.encode("Senha123"));
     usuario.setPapel(papel);
     return usuarios.save(usuario);
   }
@@ -331,7 +331,7 @@ class SecurityIntegrationTest {
                     .content(
                         "{\"login\":\""
                             + email
-                            + "\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                            + "\",\"password\":\"Senha123\",\"papel\":\"USER\"}"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

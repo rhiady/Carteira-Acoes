@@ -52,7 +52,7 @@ class AuthControllerIntegrationTest {
             .perform(
                 post("/api/auth/login")
                     .contentType("application/json")
-                    .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
+                    .content("{\"login\":\"ana@email.com\",\"password\":\"Senha123\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isString())
             .andExpect(jsonPath("$.tipo").value("Bearer"))
@@ -76,7 +76,7 @@ class AuthControllerIntegrationTest {
             post("/api/auth/cadastro")
                 .contentType("application/json")
                 .content(
-                    "{\"nome\":\"Ana Silva\",\"email\":\"ana@email.com\",\"senha\":\"senha123\"}"))
+                    "{\"nome\":\"Ana Silva\",\"email\":\"ana@email.com\",\"senha\":\"Senha123\"}"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.login").value("ana@email.com"))
         .andExpect(jsonPath("$.papel").value("USER"));
@@ -85,8 +85,27 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"Senha123\"}"))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void rejectsRegistrationPasswordWithoutUpperAndLowerCase() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/auth/cadastro")
+                .contentType("application/json")
+                .content(
+                    "{\"nome\":\"Ana Silva\",\"email\":\"ana-invalida@email.com\",\"senha\":\"senha123\"}"))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            post("/api/auth/cadastro")
+                .contentType("application/json")
+                .content(
+                    "{\"nome\":\"Ana Silva\",\"email\":\"ana-invalida2@email.com\",\"senha\":\"SENHA123\"}"))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -97,7 +116,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"ana@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"username\":\"ana@email.com\",\"password\":\"Senha123\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.token").isString());
   }
@@ -127,14 +146,14 @@ class AuthControllerIntegrationTest {
             put("/api/auth/senha")
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .content("{\"password\":\"nova-senha\"}"))
+                .content("{\"password\":\"Nova-senha\"}"))
         .andExpect(status().isNoContent());
 
     mockMvc
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"login\":\"ana@email.com\",\"password\":\"nova-senha\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"Nova-senha\"}"))
         .andExpect(status().isOk());
   }
 
@@ -145,7 +164,7 @@ class AuthControllerIntegrationTest {
         .perform(
             put("/api/auth/senha")
                 .contentType("application/json")
-                .content("{\"password\":\"nova-senha\"}"))
+                .content("{\"password\":\"Nova-senha\"}"))
         .andExpect(status().isUnauthorized());
   }
 
@@ -162,6 +181,40 @@ class AuthControllerIntegrationTest {
                 .contentType("application/json")
                 .content("{\"password\":\"curta\"}"))
         .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            put("/api/auth/senha")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("{\"password\":\"senha123\"}"))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            put("/api/auth/senha")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("{\"password\":\"SENHA123\"}"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void acceptsExistingPasswordOutsideNewPolicyOnLogin() throws Exception {
+    Usuario usuario = new Usuario();
+    usuario.setNome("legado@email.com");
+    usuario.setEmail("legado@email.com");
+    usuario.setSenha(passwordEncoder.encode("senha123"));
+    usuario.setPapel(Papel.USER);
+    usuario.setAtivo(true);
+    usuarios.save(usuario);
+
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType("application/json")
+                .content("{\"login\":\"legado@email.com\",\"password\":\"senha123\"}"))
+        .andExpect(status().isOk());
   }
 
   @Test
@@ -170,7 +223,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"login\":\"naoexiste@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"naoexiste@email.com\",\"password\":\"Senha123\"}"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error").value("CREDENCIAIS_INVALIDAS"));
   }
@@ -194,7 +247,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"login\":\"\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"\",\"password\":\"Senha123\"}"))
         .andExpect(status().isBadRequest());
   }
 
@@ -213,7 +266,7 @@ class AuthControllerIntegrationTest {
     Usuario usuario = new Usuario();
     usuario.setNome("desativado@email.com");
     usuario.setEmail("desativado@email.com");
-    usuario.setSenha(passwordEncoder.encode("senha123"));
+    usuario.setSenha(passwordEncoder.encode("Senha123"));
     usuario.setPapel(Papel.USER);
     usuario.setAtivo(false);
     usuarios.save(usuario);
@@ -222,7 +275,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"login\":\"desativado@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"desativado@email.com\",\"password\":\"Senha123\"}"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error").value("CREDENCIAIS_INVALIDAS"));
   }
@@ -265,7 +318,7 @@ class AuthControllerIntegrationTest {
         .perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"login\":\"ana@email.com\",\"password\":\"senha123\"}"))
+                .content("{\"login\":\"ana@email.com\",\"password\":\"Senha123\"}"))
         .andExpect(status().isOk())
         .andReturn()
         .getResponse()
@@ -296,7 +349,7 @@ class AuthControllerIntegrationTest {
                 .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content(
-                    "{\"login\":\"ana@email.com\",\"password\":\"senha123\",\"papel\":\"USER\"}"))
+                    "{\"login\":\"ana@email.com\",\"password\":\"Senha123\",\"papel\":\"USER\"}"))
         .andExpect(status().isCreated());
   }
 }
